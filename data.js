@@ -5,7 +5,25 @@ const MOCK_DATA = {
     id: '1', nickname: '科技爱好者', avatar: '🧑‍💻',
     points: 1000, willpower: 5000, willpowerMonthly: 1200,
     rank: 128, level: 2, honorsClaimed: [], orders: [],
-    checkinToday: false, email: ''
+    checkinToday: false, email: '',
+    // 多积分体系
+    hp: 1000,     // 消费积分（HP）- 基础积分，可消费、可兑换商品
+    exp: 350,     // 指数评价积分（EXP）- 专业贡献，1 EXP = 0.5 HP
+    watch: 280,   // 观看互动积分（WATCH）- 日常行为，1 WATCH = 0.2 HP
+    gov: 50       // 治理积分（GOV）- 治理权，1 GOV = 1.2 HP
+  },
+  // 积分兑换汇率（单向兑换，仅支持非HP积分兑换为HP）
+  pointsExchange: {
+    'exp': { rate: 0.5, name: '指数评价积分', icon: '📊', color: '#8B5CF6' },
+    'watch': { rate: 0.2, name: '观看互动积分', icon: '📺', color: '#F18F01' },
+    'gov': { rate: 1.2, name: '治理积分', icon: '🗳️', color: '#10B981' }
+  },
+  // 积分池数据（展示平台整体积分经济模型）
+  pointsPool: {
+    totalHP: 50000000,       // 总铸造HP
+    circulatingHP: 32000000, // 流通HP
+    destroyedHP: 8000000,    // 已销毁HP
+    sponsorReserve: 10000000 // 赞助商储备金
   },
   levels: [
     { id: 0, name: '基础级', minWp: 0, maxWp: 999, color: '#6B7280', icon: '🌱', perks: '基础功能访问' },
@@ -65,12 +83,31 @@ const MOCK_DATA = {
     { id: 'r10', time: '2026-03-22 12:00', action: '发表评论', wp: 10, icon: '💬' }
   ],
   pointsRecords: [
-    { id: 'pr1', time: '2026-03-27 21:00', action: '发表评论奖励', pts: 5, type: 'earn' },
-    { id: 'pr2', time: '2026-03-27 20:30', action: '观看节目奖励', pts: 30, type: 'earn' },
-    { id: 'pr3', time: '2026-03-27 10:05', action: '每日签到', pts: 5, type: 'earn' },
-    { id: 'pr4', time: '2026-03-26 15:30', action: '购买商品抵扣', pts: -200, type: 'spend' },
-    { id: 'pr5', time: '2026-03-25 16:30', action: '竞猜奖励', pts: 180, type: 'earn' },
-    { id: 'pr6', time: '2026-03-25 16:00', action: '竞猜下注', pts: -100, type: 'spend' }
+    { id: 'pr1', time: '2026-03-27 21:00', action: '发表评论奖励', pts: 5, type: 'earn', category: 'hp' },
+    { id: 'pr2', time: '2026-03-27 20:30', action: '观看节目奖励', pts: 30, type: 'earn', category: 'watch' },
+    { id: 'pr3', time: '2026-03-27 10:05', action: '每日签到', pts: 5, type: 'earn', category: 'hp' },
+    { id: 'pr4', time: '2026-03-26 15:30', action: '购买商品抵扣', pts: -200, type: 'spend', category: 'hp' },
+    { id: 'pr5', time: '2026-03-25 16:30', action: '竞猜奖励', pts: 180, type: 'earn', category: 'hp' },
+    { id: 'pr6', time: '2026-03-25 16:00', action: '竞猜下注', pts: -100, type: 'spend', category: 'hp' },
+    { id: 'pr7', time: '2026-03-25 14:00', action: '上传研报奖励', pts: 50, type: 'earn', category: 'exp' },
+    { id: 'pr8', time: '2026-03-24 11:00', action: '治理投票奖励', pts: 20, type: 'earn', category: 'gov' },
+    { id: 'pr9', time: '2026-03-23 09:00', action: '观看互动奖励', pts: 40, type: 'earn', category: 'watch' }
+  ],
+  // 各积分类型独立记录
+  expRecords: [
+    { id: 'er1', time: '2026-03-25 14:00', action: '上传研报奖励', pts: 50, type: 'earn' },
+    { id: 'er2', time: '2026-03-20 16:00', action: '指数评论奖励', pts: 30, type: 'earn' },
+    { id: 'er3', time: '2026-03-15 10:00', action: '专业分析奖励', pts: 80, type: 'earn' }
+  ],
+  watchRecords: [
+    { id: 'wr1', time: '2026-03-27 20:30', action: '观看节目奖励', pts: 30, type: 'earn' },
+    { id: 'wr2', time: '2026-03-26 20:00', action: '观看节目奖励', pts: 25, type: 'earn' },
+    { id: 'wr3', time: '2026-03-25 19:30', action: '分享节目奖励', pts: 10, type: 'earn' },
+    { id: 'wr4', time: '2026-03-24 20:00', action: '点赞评论奖励', pts: 5, type: 'earn' }
+  ],
+  govRecords: [
+    { id: 'gr1', time: '2026-03-24 11:00', action: '参与平台投票', pts: 20, type: 'earn' },
+    { id: 'gr2', time: '2026-03-15 14:00', action: '社区治理贡献', pts: 30, type: 'earn' }
   ],
   merchant: {
     email: 'ubtrobot@example.com',
@@ -98,7 +135,68 @@ const MOCK_DATA = {
     pointsRedeemed: 156800,
     pointsRetained: 71300
   },
-  apiLogs: []
+  apiLogs: [],
+
+  // ==================== AI & Agent 数据层 ====================
+  agentConfig: {
+    enabled: false,
+    autoCheckin: true,
+    autoWatch: false,
+    autoBet: false,
+    autoBetCategory: '全部',
+    autoRedeem: false,
+    autoRedeemThreshold: 2000,
+    lastRun: null,
+    totalAutoPoints: 0,
+    totalAutoWp: 0,
+    runCount: 0
+  },
+
+  aiArticles: [
+    { id: 'a1', time: '2026-03-30 18:30', keywords: '人形机器人 优必选 量产', content: '2026年，人形机器人赛道进入量产元年。优必选Walker S已进驻宝马、吉利等头部制造商，日产能突破50台。从技术指标看，其运动控制精度达到±0.1mm，远超行业均值0.5mm。这意味着中国人形机器人已具备工业替代能力，而非仅停留于展示层面。对投资者而言，优必选的核心护城河在于运动控制算法积累——这是用金钱和时间堆砌起来的壁垒，短期内竞争者难以复制。', wp: 80, liked: 0 },
+    { id: 'a2', time: '2026-03-29 14:15', keywords: '新能源 固态电池 比亚迪', content: '全固态电池是新能源汽车的"圣杯"。比亚迪2025年已完成第一批固态原型电池内部测试，能量密度达到400Wh/kg，较当前主流液态电池提升80%。更关键的是安全性：固态电解质无液态电解液泄漏风险，热失控概率降低95%以上。预计2027年前，比亚迪将率先实现固态电池小批量装车，这将是新能源赛道最重要的技术分水岭。', wp: 80, liked: 0 }
+  ],
+
+  willpowerMarket: [
+    { id: 'm1', company: '优必选科技', logo: '🤖', title: '征集：Walker S应用场景深度分析报告', desc: '需要500字以上行业分析，覆盖制造业、物流、医疗三大场景，数据充分，逻辑清晰。', reward: 300, deadline: '2026-04-15', type: '研报', submissions: 12, status: 'open' },
+    { id: 'm2', company: '科大讯飞', logo: '🎙️', title: '征集：星火大模型教育场景落地案例分析', desc: '对比讯飞与同类产品在K12教育场景的实际效果，数据支撑，字数800字以上。', reward: 250, deadline: '2026-04-20', type: '对比分析', submissions: 8, status: 'open' },
+    { id: 'm3', company: '理想汽车', logo: '🚗', title: '征集：2026年MPV新能源市场竞争格局', desc: '分析理想、腾势、岚图三大MPV玩家的产品定位与用户画像差异，1000字以上。', reward: 400, deadline: '2026-04-10', type: '市场分析', submissions: 5, status: 'open' },
+    { id: 'm4', company: '小米集团', logo: '📱', title: '征集：小米SU7二手车保值率预测模型', desc: '基于历史新能源车型保值率数据，预测SU7一年/三年保值率区间，需要数据图表支持。', reward: 500, deadline: '2026-05-01', type: '数据模型', submissions: 3, status: 'open' },
+    { id: 'm5', company: '华为技术', logo: '🌐', title: '征集：鸿蒙生态与安卓开发者迁移成本分析', desc: '从开发者视角量化鸿蒙迁移的时间、人力、学习成本，给出迁移ROI建议。', reward: 600, deadline: '2026-04-25', type: '技术评估', submissions: 7, status: 'open' }
+  ],
+
+  mySubmissions: [],
+
+  // ==================== 合力智脑 数据层 ====================
+  brainConfig: {
+    activated: false,
+    cEndGoal: '',           // 用户的积分目标商品ID
+    cEndGoalPoints: 0,      // 目标所需HP
+    autoExecute: false,     // 是否已授权自动执行
+    notifications: true,
+    lastPlanDate: null,
+    planCache: null         // 缓存的积分规划
+  },
+
+  brainChatHistory: [
+    {
+      id: 'sys1',
+      role: 'brain',
+      content: '你好！我是**合力智脑**，你的专属积分管家 🧠\n\n我可以帮你：\n• 📊 **规划积分路径** — 告诉我你想换什么，我计算最短路径\n• ⚡ **一键自动执行** — 授权后我每天替你签到、领积分\n• 🔔 **智能提醒** — 积分够了第一时间通知你\n\n试试说："我想换小米14 Ultra" 或者 "帮我看看今天有什么任务"',
+      time: new Date().toLocaleString()
+    }
+  ],
+
+  merchantBrainHistory: [
+    {
+      id: 'msys1',
+      role: 'brain',
+      content: '欢迎使用**合力智脑 · 商家版** 🤖\n\n我是您的专属AI运营助手，可以：\n• 📈 **自动生成周报** — 每周一自动分析销售数据\n• 💡 **积分任务建议** — 分析转化瓶颈，推荐激励方案\n• 🎯 **智能客服** — 自动回复用户产品问题\n\n试试说："帮我生成本周运营周报" 或 "哪款产品需要增加积分激励？"',
+      time: new Date().toLocaleString()
+    }
+  ],
+
+  weeklyReportCache: null
 };
 
 // 状态管理（简易Pinia替代）
@@ -182,15 +280,60 @@ const API = {
     return { success: true };
   },
 
-  async addPoints(amount, action) {
+  async addPoints(amount, action, category = 'hp') {
     const user = Store.get('user');
+    // 根据类别更新对应积分
+    if (category === 'hp') user.hp += amount;
+    else if (category === 'exp') user.exp += amount;
+    else if (category === 'watch') user.watch += amount;
+    else if (category === 'gov') user.gov += amount;
+    // 兼容旧逻辑
     user.points += amount;
     const pr = Store.get('pointsRecords');
-    pr.unshift({ id: 'pr' + Date.now(), time: new Date().toLocaleString(), action, pts: amount, type: amount > 0 ? 'earn' : 'spend' });
+    pr.unshift({ id: 'pr' + Date.now(), time: new Date().toLocaleString(), action, pts: amount, type: amount > 0 ? 'earn' : 'spend', category });
     Store.set('user', user);
     Store.set('pointsRecords', pr);
     this._log('POST', '/api/user/points', 200);
     return { success: true };
+  },
+
+  // 积分兑换（单向：EXP/WATCH/GOV → HP）
+  async exchangePoints(fromCategory, amount) {
+    const exchange = Store.get('pointsExchange');
+    if (!exchange[fromCategory]) return { success: false, msg: '不支持该积分类型' };
+    const user = Store.get('user');
+    if (user[fromCategory] < amount) return { success: false, msg: '积分不足' };
+    const rate = exchange[fromCategory].rate;
+    const hpAmount = Math.floor(amount * rate);
+    user[fromCategory] -= amount;
+    user.hp += hpAmount;
+    user.points += hpAmount;
+    // 记录HP流水
+    const pr = Store.get('pointsRecords');
+    pr.unshift({
+      id: 'pr' + Date.now(),
+      time: new Date().toLocaleString(),
+      action: `${exchange[fromCategory].name}兑换HP`,
+      pts: hpAmount,
+      type: 'earn',
+      category: 'hp',
+      sourceCategory: fromCategory,
+      sourceAmount: amount
+    });
+    // 记录对应类别消耗
+    const fromRecords = Store.get(fromCategory + 'Records') || [];
+    fromRecords.unshift({
+      id: fromCategory[0] + 'r' + Date.now(),
+      time: new Date().toLocaleString(),
+      action: `兑换为${hpAmount}HP`,
+      pts: -amount,
+      type: 'spend'
+    });
+    Store.set('user', user);
+    Store.set('pointsRecords', pr);
+    Store.set(fromCategory + 'Records', fromRecords);
+    this._log('POST', '/api/user/points/exchange', 200);
+    return { success: true, hpAmount, rate };
   },
 
   async claimWatchReward(episodeId, duration) {

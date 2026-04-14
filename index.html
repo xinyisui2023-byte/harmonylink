@@ -38,10 +38,19 @@
               ['/api/show/betting/submit','POST','提交竞猜'],
               ['/api/show/comments','POST','发表评论'],
               ['/api/products/list','GET','商品列表'],
+              ['/api/products/detail','GET','商品详情'],
               ['/api/order/create','POST','创建订单'],
               ['/api/rank/companies','GET','指数企业列表'],
               ['/api/merchant/login','POST','商家登录'],
               ['/api/merchant/dashboard','GET','商家数据看板'],
+              ['/api/agent/chat','POST','合力智脑对话（C端）'],
+              ['/api/agent/plan','POST','积分目标规划'],
+              ['/api/agent/authorize','POST','授权自动执行'],
+              ['/api/merchant/brain/chat','POST','合力智脑商家版对话'],
+              ['/api/merchant/brain/report','GET','自动生成运营周报'],
+              ['/api/merchant/brain/task','POST','发布积分激励任务'],
+              ['/api/user/points/exchange','POST','积分兑换（非HP积分兑换为HP）'],
+              ['/api/user/points/detail','GET','各积分类型余额及明细'],
             ].map(([path, method, desc], i) => `
               <tr style="background:${i%2===0?'white':'var(--bg)'};">
                 <td style="padding:8px;font-family:monospace;color:var(--primary);">${path}</td>
@@ -97,6 +106,9 @@
     <!-- 积分明细 -->
     <div id="page-points-detail" class="page"></div>
 
+    <!-- 积分兑换 -->
+    <div id="page-points-exchange" class="page"></div>
+
     <!-- 我的 -->
     <div id="page-mine" class="page"></div>
 
@@ -105,6 +117,21 @@
 
     <!-- 商家后台 -->
     <div id="page-merchant-dashboard" class="page"></div>
+
+    <!-- AI 写作助手 -->
+    <div id="page-ai-writer" class="page"></div>
+
+    <!-- 个人 Agent -->
+    <div id="page-agent" class="page"></div>
+
+    <!-- 意志市场 -->
+    <div id="page-market" class="page"></div>
+
+    <!-- 合力智脑 C端 -->
+    <div id="page-brain" class="page"></div>
+
+    <!-- 合力智脑 B端商家运营 -->
+    <div id="page-merchant-brain" class="page"></div>
 
     <!-- 底部 Tab Bar -->
     <div class="tab-bar">
@@ -116,9 +143,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
         <span>综艺</span>
       </div>
-      <div class="tab-item" id="tab-mall" onclick="navigate('page-mall')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        <span>商城</span>
+      <div class="tab-item" id="tab-ai" onclick="navigate('page-ai-writer')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        <span>AI</span>
       </div>
       <div class="tab-item" id="tab-rank" onclick="navigate('page-rank')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>

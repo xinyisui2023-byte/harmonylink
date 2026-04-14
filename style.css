@@ -178,6 +178,97 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino 
 .wp-level-bar { background: rgba(255,255,255,0.2); border-radius: 10px; height: 8px; margin: 10px 0; overflow: hidden; }
 .wp-level-fill { height: 100%; border-radius: 10px; background: var(--gradient-accent); }
 
+/* ==================== 多积分体系样式 ==================== */
+
+/* 顶部导航积分显示 */
+.nav-points-chip { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; cursor: pointer; }
+.nav-points-icon { font-size: 12px; }
+.nav-points-val { font-size: 12px; font-weight: 700; }
+
+/* 多积分概览卡片 */
+.multi-points-overview { background: white; margin: 0 16px 14px; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); cursor: pointer; }
+.mpoints-item { float: left; width: 25%; text-align: center; padding: 8px 4px; }
+.mpoints-icon { font-size: 20px; margin-bottom: 4px; }
+.mpoints-name { font-size: 10px; color: var(--text-muted); }
+.mpoints-value { font-size: 14px; font-weight: 800; margin: 2px 0; }
+.mpoints-label { font-size: 9px; color: var(--text-muted); }
+.mpoints-hp .mpoints-value { color: var(--primary); }
+.mpoints-exp .mpoints-value { color: #8B5CF6; }
+.mpoints-watch .mpoints-value { color: #F18F01; }
+.mpoints-gov .mpoints-value { color: #10B981; }
+.mpoints-tip { clear: both; font-size: 10px; color: var(--text-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.mpoints-tip-icon { margin-right: 4px; }
+
+/* 积分明细页头部 */
+.multi-points-header { background: var(--gradient-card); color: white; margin: 0 16px 14px; border-radius: var(--radius); padding: 20px; display: flex; align-items: center; justify-content: space-between; }
+.mpoints-hp-box { display: flex; align-items: center; gap: 12px; }
+.mpoints-hp-icon { font-size: 32px; }
+.mpoints-hp-label { font-size: 12px; opacity: 0.8; }
+.mpoints-hp-value { font-size: 28px; font-weight: 900; }
+.mpoints-exchange-btn { background: white; color: var(--primary); border-radius: 20px; }
+.mpoints-exchange-btn:hover { background: var(--bg); }
+
+/* 其他积分类型卡片 */
+.other-points-row { display: flex; gap: 8px; padding: 0 16px; margin-bottom: 14px; overflow-x: auto; }
+.other-points-card { flex: 1; min-width: 110px; background: white; border-radius: var(--radius-sm); padding: 12px; box-shadow: var(--shadow); cursor: pointer; }
+.other-points-icon { font-size: 18px; margin-bottom: 6px; }
+.other-points-name { font-size: 10px; color: var(--text-muted); }
+.other-points-val { font-size: 16px; font-weight: 800; margin: 2px 0; }
+.other-points-rate { font-size: 9px; color: var(--text-muted); }
+.exp-card { border-left: 3px solid #8B5CF6; }
+.watch-card { border-left: 3px solid #F18F01; }
+.gov-card { border-left: 3px solid #10B981; }
+
+/* 积分类型明细页 */
+.points-type-header { background: var(--gradient-card); color: white; margin: 0 16px 14px; border-radius: var(--radius); padding: 20px; }
+
+/* 设计原则卡片 */
+.points-principles-card { background: white; margin: 0 16px 16px; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.pp-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--primary); }
+.pp-item { font-size: 12px; color: var(--text-secondary); padding: 4px 0; }
+
+/* 积分兑换页面 */
+.exchange-header { background: var(--gradient-card); color: white; padding: 24px 20px; text-align: center; }
+
+/* 积分池卡片 */
+.points-pool-card { background: white; margin: 16px; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.ppool-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.ppool-stats { display: flex; justify-content: space-around; margin-bottom: 12px; }
+.ppool-stat { text-align: center; }
+.ppool-stat-val { font-size: 18px; font-weight: 800; color: var(--primary); }
+.ppool-stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.ppool-bar { height: 8px; background: var(--border); border-radius: 10px; overflow: hidden; display: flex; }
+.ppool-fill { height: 100%; }
+.ppool-circulating { background: var(--primary); }
+.ppool-destroyed { background: var(--accent); }
+.ppool-legend { display: flex; gap: 16px; margin-top: 8px; justify-content: center; }
+.ppool-legend-item { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+.ppool-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.ppool-dot.ppool-circulating { background: var(--primary); }
+.ppool-dot.ppool-destroyed { background: var(--accent); }
+
+/* 兑换卡片 */
+.exchange-card { background: white; border-radius: var(--radius-sm); padding: 16px; box-shadow: var(--shadow); margin-bottom: 12px; }
+.exchange-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.exchange-card-icon { font-size: 28px; }
+.exchange-card-info { flex: 1; }
+.exchange-card-name { font-size: 14px; font-weight: 700; }
+.exchange-card-balance { font-size: 12px; color: var(--text-muted); }
+.exchange-card-rate { font-size: 11px; font-weight: 600; }
+.exchange-card-result { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.exchange-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.exchange-input { flex: 1; padding: 8px 12px; border: 2px solid var(--border); border-radius: var(--radius-xs); font-size: 13px; }
+.exchange-input:focus { border-color: var(--primary); outline: none; }
+.exchange-btn { color: white; border-radius: var(--radius-xs); font-weight: 700; }
+.exchange-quick-btns { display: flex; gap: 6px; }
+.exchange-quick-btn { flex: 1; padding: 4px; font-size: 10px; background: var(--bg); border: none; border-radius: 4px; cursor: pointer; color: var(--text-muted); }
+.exchange-quick-btn:hover { background: var(--border); }
+
+/* 兑换规则 */
+.exchange-rules { background: white; margin: 0 16px 16px; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.erule-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--primary); }
+.erule-item { font-size: 12px; color: var(--text-secondary); padding: 4px 0; }
+
 /* 订单卡片 */
 .order-card { margin: 0 16px 12px; background: var(--bg-card); border-radius: var(--radius-sm); overflow: hidden; box-shadow: var(--shadow); }
 .order-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
@@ -278,6 +369,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino 
   .stat-num { font-size: 20px; }
 }
 
+
 /* 切换动画 */
 .fade-in { animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
@@ -286,3 +378,352 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ==================== AI & Agent 模块样式 ==================== */
+
+/* AI 推广横幅 */
+.ai-promo-banner {
+  margin: 0 16px 14px;
+  background: linear-gradient(135deg, rgba(30,58,95,0.06) 0%, rgba(241,143,1,0.08) 100%);
+  border: 1.5px solid rgba(241,143,1,0.3);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ai-promo-banner:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+/* AI 功能特性卡片（横向滚动） */
+.ai-feature-card {
+  flex-shrink: 0;
+  width: 140px;
+  background: var(--gradient-main);
+  border-radius: var(--radius-sm);
+  padding: 16px 14px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 12px;
+}
+.ai-feature-card:hover { transform: translateY(-2px); opacity: 0.95; }
+
+/* AI 英雄卡片 */
+.ai-hero-card {
+  margin: 14px 16px 0;
+  background: linear-gradient(135deg, #0F1E30 0%, #1E3A5F 60%, #2D5A8E 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: white;
+}
+.ai-icon-big { font-size: 44px; }
+.ai-tag {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* 关键词推荐 chip */
+.kw-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(30,58,95,0.08);
+  color: var(--primary);
+  border: 1px solid rgba(30,58,95,0.2);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.kw-chip:hover { background: var(--primary); color: white; }
+
+/* 文章卡片 */
+.article-card {
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 0 16px 12px;
+  box-shadow: var(--shadow);
+}
+.article-meta { display: flex; align-items: center; }
+.article-body { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+
+/* Agent 状态卡 */
+.agent-status-card {
+  margin: 14px 16px 0;
+  border-radius: var(--radius);
+  padding: 20px;
+  color: white;
+  transition: all 0.3s;
+}
+.agent-on { background: linear-gradient(135deg, #1a5c3a 0%, #2d8a5a 100%); }
+.agent-off { background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); }
+
+/* AI 开关（toggle） */
+.ai-switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
+.ai-switch input { opacity: 0; width: 0; height: 0; }
+.ai-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #ccc; border-radius: 28px; transition: 0.3s;
+}
+.ai-slider:before {
+  content: ""; position: absolute; height: 22px; width: 22px;
+  left: 3px; bottom: 3px; background: white; border-radius: 50%;
+  transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.ai-switch input:checked + .ai-slider { background: var(--success); }
+.ai-switch input:checked + .ai-slider:before { transform: translateX(22px); }
+
+/* Agent 任务行 */
+.agent-task-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0;
+}
+.agent-task-info { display: flex; align-items: center; gap: 12px; flex: 1; }
+.agent-task-divider { height: 1px; background: var(--border); }
+
+/* 意志市场 */
+.market-hero {
+  margin: 14px 16px 0;
+  background: linear-gradient(135deg, var(--primary) 0%, #3B72B8 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: white;
+}
+.market-task-card {
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--accent);
+  transition: all 0.2s;
+}
+.market-task-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+/* ==================== 合力智脑 样式 ==================== */
+
+/* 首页推广横幅 */
+.brain-promo-banner {
+  margin: 0 16px 14px;
+  background: linear-gradient(135deg, #fefefe 0%, #f0f4f8 100%);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(30,58,95,0.12);
+}
+.brain-promo-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+}
+.brain-promo-icon {
+  font-size: 38px;
+  animation: brain-pulse 2.5s ease-in-out infinite;
+}
+@keyframes brain-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* AI功能卡片 - 智脑专属样式 */
+.ai-card-brain {
+  background: linear-gradient(135deg, #1E3A5F 0%, #2D5A8E 50%, #1a5c6e 100%) !important;
+  border: 1.5px solid rgba(241,143,1,0.5);
+}
+
+/* 智脑状态点 */
+.brain-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ccc;
+  display: inline-block;
+}
+.brain-status-dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: blink 1.5s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* 智脑英雄卡片 */
+.brain-hero-card {
+  margin: 14px 16px 0;
+  background: linear-gradient(135deg, #0F1E30 0%, #1E3A5F 60%, #2D5A8E 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: white;
+}
+.brain-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(241,143,1,0.2);
+  border: 2px solid rgba(241,143,1,0.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.brain-stats-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  background: rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-top: 6px;
+}
+.brain-stat { text-align: center; }
+.brain-stat-num { font-size: 18px; font-weight: 800; }
+.brain-stat-label { font-size: 10px; opacity: 0.75; margin-top: 2px; }
+
+/* 快捷意图按钮 */
+.brain-quick-btn {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.brain-quick-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(241,143,1,0.06); }
+.brain-quick-btn:active { transform: scale(0.95); }
+
+/* 对话区域 */
+.brain-chat-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 280px;
+  max-height: 420px;
+  background: var(--bg);
+}
+.brain-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.brain-msg-ai { flex-direction: row; }
+.brain-msg-user { flex-direction: row-reverse; }
+
+.brain-avatar-sm {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--gradient-main);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.brain-bubble {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.brain-bubble-ai {
+  background: white;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(30,58,95,0.10);
+  color: var(--text-primary);
+}
+.brain-bubble-user {
+  background: var(--gradient-main);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+/* 动作按钮组 */
+.brain-action-btns {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 10px;
+}
+.brain-action-btn {
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  height: auto !important;
+  border-radius: 20px !important;
+}
+
+/* 打字动画 */
+.brain-typing-dots {
+  display: flex; align-items: center; gap: 4px; padding: 2px 0;
+}
+.brain-typing-dots span {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--primary); opacity: 0.4;
+  animation: dot-bounce 1.2s infinite;
+}
+.brain-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.brain-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* 输入框区域 */
+.brain-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: white;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.brain-input-field {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  padding: 10px 16px;
+  font-size: 14px;
+  outline: none;
+  background: var(--bg);
+  transition: border-color 0.2s;
+}
+.brain-input-field:focus { border-color: var(--primary); background: white; }
+.brain-send-btn {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--gradient-main);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.brain-send-btn:active { transform: scale(0.9); }
+
+/* 商家后台 智脑入口 */
+.merchant-brain-entry {
+  margin: 0 16px 20px;
+  background: linear-gradient(135deg, #0F1E30 0%, #1E3A5F 50%, #2D5A8E 100%);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  cursor: pointer;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.merchant-brain-entry::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent) 0%, #FFAA33 100%);
+}

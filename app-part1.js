@@ -10,7 +10,7 @@ function toast(msg, duration = 2200) {
 
 // 页面导航
 let pageStack = [];
-const pages = ['page-home', 'page-show-list', 'page-show-detail', 'page-mall', 'page-product', 'page-order-confirm', 'page-order-list', 'page-rank', 'page-brand', 'page-willpower', 'page-wp-records', 'page-honor-list', 'page-points-detail', 'page-mine', 'page-merchant-login', 'page-merchant-dashboard'];
+const pages = ['page-home', 'page-show-list', 'page-show-detail', 'page-mall', 'page-product', 'page-order-confirm', 'page-order-list', 'page-rank', 'page-brand', 'page-willpower', 'page-wp-records', 'page-honor-list', 'page-points-detail', 'page-points-exchange', 'page-mine', 'page-merchant-login', 'page-merchant-dashboard', 'page-ai-writer', 'page-agent', 'page-market', 'page-brain', 'page-merchant-brain'];
 
 function navigate(pageId, data) {
   // 隐藏所有页面
@@ -43,14 +43,11 @@ function goBack() {
 
 function updateTabBar(pageId) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-  const map = { 'page-home': 'tab-home', 'page-show-list': 'tab-show', 'page-mall': 'tab-mall', 'page-rank': 'tab-rank', 'page-mine': 'tab-mine' };
-  const tabId = Object.entries(map).find(([k]) => pageId.startsWith(k.split('-').slice(0,2).join('-')));
-  // Simple: activate based on top-level
   if (pageId === 'page-home') document.getElementById('tab-home').classList.add('active');
   else if (pageId.startsWith('page-show')) document.getElementById('tab-show').classList.add('active');
-  else if (pageId.startsWith('page-mall') || pageId === 'page-product' || pageId.startsWith('page-order')) document.getElementById('tab-mall').classList.add('active');
+  else if (pageId === 'page-ai-writer' || pageId === 'page-agent' || pageId === 'page-market' || pageId === 'page-brain') document.getElementById('tab-ai').classList.add('active');
   else if (pageId === 'page-rank' || pageId === 'page-brand') document.getElementById('tab-rank').classList.add('active');
-  else if (pageId === 'page-mine' || pageId === 'page-willpower' || pageId === 'page-wp-records' || pageId === 'page-honor-list' || pageId === 'page-points-detail' || pageId.startsWith('page-merchant')) document.getElementById('tab-mine').classList.add('active');
+  else if (pageId === 'page-mine' || pageId === 'page-willpower' || pageId === 'page-wp-records' || pageId === 'page-honor-list' || pageId === 'page-points-detail' || pageId.startsWith('page-merchant') || pageId.startsWith('page-mall') || pageId === 'page-product' || pageId.startsWith('page-order')) document.getElementById('tab-mine').classList.add('active');
 }
 
 // 通用SVG图标
@@ -108,12 +105,16 @@ window.render_page_home = function() {
   const nextLevel = Store.get('levels')[Math.min(level.id + 1, 3)];
   const toNext = level.maxWp === Infinity ? 0 : nextLevel.minWp - user.willpower;
   const latestShow = shows[0];
+  const exchange = Store.get('pointsExchange');
 
   document.getElementById('page-home').innerHTML = `
     <div class="nav-bar">
       <span class="logo-text"><span class="hl">合</span>力生态</span>
-      <div style="display:flex;gap:14px;align-items:center;">
-        <span style="font-size:13px;color:rgba(255,255,255,0.85);">HP ${user.points}</span>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="nav-points-chip" onclick="navigate('page-points-detail')">
+          <span class="nav-points-icon">💰</span>
+          <span class="nav-points-val">${user.hp}</span>
+        </div>
         ${Icons.bell}
       </div>
     </div>
@@ -152,6 +153,51 @@ window.render_page_home = function() {
       </div>
     </div>
 
+    <!-- 合力智脑 主推横幅 -->
+    <div class="brain-promo-banner" onclick="navigate('page-brain')">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="brain-promo-icon">🧠</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:800;color:var(--primary);">合力智脑 · 正式上线</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px;">对话式积分管家 · 帮你规划 / 执行 / 提醒</div>
+          <div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:700;">说"我想换小米14" → 自动规划积分路径</div>
+        </div>
+        <div style="color:var(--accent);flex-shrink:0;">${Icons.arrow}</div>
+      </div>
+    </div>
+
+    <!-- AI 三大功能卡片 -->
+    <div class="section-header">
+      <span class="section-title">✨ AI 智能体功能</span>
+      <span class="section-more" onclick="navigate('page-ai-writer')">探索 ›</span>
+    </div>
+    <div class="h-scroll" style="padding:0 16px 4px;">
+      <div class="ai-feature-card ai-card-brain" onclick="navigate('page-brain')">
+        <div style="font-size:32px;margin-bottom:8px;">🧠</div>
+        <div style="font-size:13px;font-weight:700;">合力智脑</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:4px;">对话式积分管家</div>
+        <div style="font-size:11px;color:var(--accent-light);margin-top:6px;font-weight:700;">智能规划路径</div>
+      </div>
+      <div class="ai-feature-card" onclick="navigate('page-ai-writer')">
+        <div style="font-size:32px;margin-bottom:8px;">📝</div>
+        <div style="font-size:13px;font-weight:700;">AI 写作助手</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:4px;">关键词生成行业分析</div>
+        <div style="font-size:11px;color:var(--accent-light);margin-top:6px;font-weight:700;">+80 贡献值/篇</div>
+      </div>
+      <div class="ai-feature-card" onclick="navigate('page-agent')">
+        <div style="font-size:32px;margin-bottom:8px;">🤖</div>
+        <div style="font-size:13px;font-weight:700;">个人 Agent</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:4px;">自动签到领积分</div>
+        <div style="font-size:11px;color:var(--accent-light);margin-top:6px;font-weight:700;">解放双手</div>
+      </div>
+      <div class="ai-feature-card" onclick="navigate('page-market')">
+        <div style="font-size:32px;margin-bottom:8px;">🏦</div>
+        <div style="font-size:13px;font-weight:700;">意志市场</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:4px;">企业发布任务接单</div>
+        <div style="font-size:11px;color:var(--accent-light);margin-top:6px;font-weight:700;">最高 +600 贡献值</div>
+      </div>
+    </div>
+
     <!-- 意志速览 -->
     <div class="willpower-card" onclick="navigate('page-willpower')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
@@ -169,6 +215,43 @@ window.render_page_home = function() {
       <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.75;margin-top:6px;">
         <span>近30天 +${user.willpowerMonthly}</span>
         ${level.maxWp !== Infinity ? `<span>距下一级还需 ${toNext}</span>` : '<span>已达满级 💎</span>'}
+      </div>
+    </div>
+
+    <!-- 多积分体系概览 -->
+    <div class="section-header">
+      <span class="section-title">💎 多积分体系</span>
+      <span class="section-more" onclick="navigate('page-points-detail')">明细 ›</span>
+    </div>
+    <div class="multi-points-overview" onclick="navigate('page-points-exchange')">
+      <div class="mpoints-item mpoints-hp">
+        <div class="mpoints-icon">💰</div>
+        <div class="mpoints-name">消费积分</div>
+        <div class="mpoints-value">${user.hp.toLocaleString()}</div>
+        <div class="mpoints-label">HP</div>
+      </div>
+      <div class="mpoints-item mpoints-exp">
+        <div class="mpoints-icon">📊</div>
+        <div class="mpoints-name">指数积分</div>
+        <div class="mpoints-value">${user.exp.toLocaleString()}</div>
+        <div class="mpoints-label">EXP · 可兑${Math.floor(user.exp * exchange.exp.rate)}HP</div>
+      </div>
+      <div class="mpoints-item mpoints-watch">
+        <div class="mpoints-icon">📺</div>
+        <div class="mpoints-name">观看积分</div>
+        <div class="mpoints-value">${user.watch.toLocaleString()}</div>
+        <div class="mpoints-label">WATCH · 可兑${Math.floor(user.watch * exchange.watch.rate)}HP</div>
+      </div>
+      <div class="mpoints-item mpoints-gov">
+        <div class="mpoints-icon">🗳️</div>
+        <div class="mpoints-name">治理积分</div>
+        <div class="mpoints-value">${user.gov.toLocaleString()}</div>
+        <div class="mpoints-label">GOV · 可兑${Math.floor(user.gov * exchange.gov.rate)}HP</div>
+      </div>
+      <div style="clear:both;"></div>
+      <div class="mpoints-tip">
+        <span class="mpoints-tip-icon">ℹ️</span>
+        非HP积分可单向兑换为HP，<span style="color:var(--accent);font-weight:600;">1 GOV = 1.2 HP</span> · <span style="color:var(--primary);font-weight:600;">1 EXP = 0.5 HP</span> · <span style="color:#F18F01;font-weight:600;">1 WATCH = 0.2 HP</span>
       </div>
     </div>
 
