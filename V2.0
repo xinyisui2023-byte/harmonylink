@@ -1,0 +1,3940 @@
+/* =============================================
+   app-part1.js - 页面渲染函数
+   合力生态 HarmonyLink v2.0
+   ============================================= */
+
+// ========== 全局状态 ==========
+let pageStack = [];
+let currentBrainMode = 'c';
+let currentRankFilter = 'all';
+let currentMallFilter = 'all';
+let currentShowFilter = 'all';
+
+// ========== 导航系统 ==========
+function navigate(pageId, data) {
+  const pages = document.querySelectorAll('.page');
+  const currentPage = document.querySelector('.page.active');
+
+  pages.forEach(p => {
+    p.classList.remove('active', 'slide-in', 'slide-out', 'fade-in');
+  });
+
+  const target = document.getElementById(pageId);
+  if (!target) return;
+
+  target.classList.add('active', 'slide-in');
+  pageStack.push({ pageId, data });
+
+  const renderFn = window['render_' + pageId.replace(/-/g, '_')];
+  if (typeof renderFn === 'function') renderFn(data);
+
+  updateAllTabBars(pageId);
+}
+
+function goBack() {
+  if (pageStack.length <= 1) return;
+  pageStack.pop();
+  const prev = pageStack[pageStack.length - 1];
+  if (!prev) return;
+
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(p => p.classList.remove('active', 'slide-in', 'slide-out', 'fade-in'));
+
+  const target = document.getElementById(prev.pageId);
+  if (target) {
+    target.classList.add('active', 'fade-in');
+    const renderFn = window['render_' + prev.pageId.replace(/-/g, '_')];
+    if (typeof renderFn === 'function') renderFn(prev.data);
+  }
+  updateAllTabBars(prev.pageId);
+}
+
+function updateAllTabBars(pageId) {
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  const tabMap = {
+    'page-home': ['tab-home', 'tab-home2'],
+    'page-show-list': ['tab-show', 'tab-show2'],
+    'page-show-detail': ['tab-show', 'tab-show2'],
+    'page-brain': ['tab-ai', 'tab-ai2'],
+    'page-agent': ['tab-ai', 'tab-ai2'],
+    'page-ai-writer': ['tab-ai', 'tab-ai2'],
+    'page-rank': ['tab-rank', 'tab-rank2'],
+    'page-brand': ['tab-rank', 'tab-rank2'],
+    'page-mine': ['tab-mine', 'tab-mine2']
+  };
+  const ids = tabMap[pageId] || [];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  });
+}
+
+// ========== 首页 ==========
+window.render_page_home = function() {
+  const companies = Store.get('companies').slice(0, 5);
+  const listEl = document.getElementById('rank-mini-list');
+  if (!listEl) return;
+  listEl.innerHTML = companies.map((c, i) => `
+    <div class="rank-mini-item" onclick="navigate('page-brand', {id:'${c.id}'})">
+      <div class="rmi-rank ${i===0?'top1':i===1?'top2':i===2?'top3':'normal'}">${i+1}</div>
+      <div class="rmi-info">
+        <div class="rmi-name">${c.name}</div>
+        <div class="rmi-sector">${c.sector}</div>
+      </div>
+      <div class="rmi-score">
+        <div class="rmi-score-num">${c.index}</div>
+        <div class="rmi-score-change ${c.change>=0?'up':'down'}">${c.change>=0?'▲':'▼'}${Math.abs(c.change)}</div>
+      </div>
+    </div>
+  `).join('');
+};
+
+// ========== 飞轮详情 ==========
+window.render_page_flywheel = function() {
+  const el = document.getElementById('flywheel-detail-content');
+  if (!el) return;
+  const nodes = [
+    { num: 1, title: 'C端参与', color: 'rgba(241,143,1,0.15)', border: 'rgba(241,143,1,0.5)', items: ['观看《智造者》等综艺内容', '发表指数评论和研报分析', '参与社区治理投票', '贡献个人行为数据', 'MP积分记录人性温度'] },
+    { num: 2, title: '积分铸造', color: 'rgba(56,161,105,0.12)', border: 'rgba(56,161,105,0.5)', items: ['WATCH/EXP/GOV/DATA/MP五维积分同步铸造', '区块链存证，全流程可溯源', '数交所备案，合规安全', '积分即时到账，贡献值同步增长', '积分池动态平衡，防通胀机制'] },
+    { num: 3, title: '合力指数上行', color: 'rgba(108,99,255,0.12)', border: 'rgba(108,99,255,0.5)', items: ['C端注意力流向推动企业指数实时更新', '比财报早3-6个月的先行指标', 'MP维度量化企业人性温度', '激活A股失语上市公司市值管理', '成为善意资本配置的参考标准'] },
+    { num: 4, title: 'B端变现', color: 'rgba(49,130,206,0.12)', border: 'rgba(49,130,206,0.5)', items: ['上市公司赞助综艺获得精准曝光', '品牌故事进入Pioneer OS叙事基础设施', '积分商城提供真实商品和服务变现', '商家后台实时查看ROI数据', '龙虾Agent API接口变现通道'] },
+    { num: 5, title: '生态裂变', color: 'rgba(221,107,32,0.12)', border: 'rgba(221,107,32,0.5)', items: ['优质内容收益反哺内容创作', '更多用户被高价值内容吸引加入', 'DAO组织共建生态指数级裂变（2028）', '注意力经济全球化扩张', '人类意义网络成为独特资产类别'] }
+  ];
+
+  el.innerHTML = `
+    <div style="padding:0 16px 8px; color:rgba(255,255,255,0.5); font-size:13px; background:#0A1628;">飞轮一旦转起来，后来者追赶成本极高，且扩容能力不断增强。</div>
+    <div style="background:#0A1628; padding-bottom:8px;">
+    ${nodes.map((n, i) => `
+      <div class="fw-detail-node">
+        <div class="fwdn-head" style="background:${n.color};border:1px solid ${n.border};border-radius:12px 12px 0 0;">
+          <div class="fwdn-num">${n.num}</div>
+          <div class="fwdn-title">${n.title}</div>
+        </div>
+        <div class="fwdn-body" style="background:${n.color};border:1px solid ${n.border};border-top:none;border-radius:0 0 12px 12px;">
+          <div class="fwdn-items">
+            ${n.items.map(item => `<div class="fwdn-item">${item}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+      ${i < nodes.length - 1 ? '<div class="fw-arrow-large">↓</div>' : ''}
+    `).join('')}
+    </div>
+
+    <div style="margin:16px;padding:20px;background:linear-gradient(135deg,rgba(241,143,1,0.1),rgba(241,143,1,0.05));border:1px solid rgba(241,143,1,0.3);border-radius:16px;">
+      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:10px;">📊 飞轮验证数据</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--accent);">1.6亿</div><div style="font-size:11px;color:rgba(255,255,255,0.45);">综艺赞助级别</div></div>
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--accent);">95%+</div><div style="font-size:11px;color:rgba(255,255,255,0.45);">目标用户黏性</div></div>
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--accent);">3步</div><div style="font-size:11px;color:rgba(255,255,255,0.45);">战略阶段</div></div>
+        <div style="text-align:center;"><div style="font-size:22px;font-weight:900;color:var(--accent);">2028</div><div style="font-size:11px;color:rgba(255,255,255,0.45);">DAO生态期</div></div>
+      </div>
+    </div>
+  `;
+};
+
+// ========== 综艺列表 ==========
+window.render_page_show_list = function() {
+  filterShows(currentShowFilter, null);
+};
+
+function filterShows(type, el) {
+  currentShowFilter = type;
+  if (el) {
+    document.querySelectorAll('#page-show-list .nbt-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  const shows = Store.get('shows');
+  const filtered = type === 'all' ? shows : shows.filter(s => s.type === type);
+  const el2 = document.getElementById('show-list-content');
+  if (!el2) return;
+  el2.innerHTML = `
+    <div style="padding:12px 0 8px;">
+      ${filtered.map(show => `
+        <div class="show-card" onclick="navigate('page-show-detail', {id:'${show.id}'})">
+          <div class="sc-cover">
+            <div>${show.emoji}</div>
+            <div class="sc-badge">${show.badge}</div>
+          </div>
+          <div class="sc-info">
+            <div class="sc-title">${show.title}</div>
+            <div class="sc-ep">${show.subtitle}</div>
+            <div class="sc-tags">${show.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+            <div class="sc-reward">📦 完整观看可得 ${show.total_reward} 积分</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ========== 综艺详情 ==========
+window.render_page_show_detail = function(data) {
+  const shows = Store.get('shows');
+  const show = data && data.id ? shows.find(s => s.id === data.id) : shows[0];
+  if (!show) return;
+
+  const el = document.getElementById('show-detail-content');
+  if (!el) return;
+
+  const watchedCount = show.episodes_data.filter(e => e.watched).length;
+  const progress = Math.round(watchedCount / show.episodes_data.length * 100);
+
+  el.innerHTML = `
+    <div class="show-hero">
+      <div class="show-hero-back" onclick="goBack()">←</div>
+      <div class="show-hero-overlay"></div>
+      <div class="show-hero-content">
+        <div style="font-size:14px;color:rgba(255,255,255,0.55);margin-bottom:4px;">${show.subtitle}</div>
+        <div class="show-hero-title">${show.title}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          ${show.tags.map(t=>`<span class="tag" style="background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);">${t}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:16px; background:#fff; margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:14px;font-weight:700;color:var(--text-main);">观看进度 ${watchedCount}/${show.episodes_data.length}集</span>
+        <span style="font-size:13px;color:var(--accent);font-weight:700;">已得 ${watchedCount * show.reward_per_ep} 积分</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%;background:linear-gradient(90deg,var(--accent),var(--accent-light));"></div></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">完整观看可获 ${show.total_reward} WATCH积分</div>
+    </div>
+
+    <div style="background:#fff;margin-bottom:8px;padding:16px;">
+      <div class="card-title">节目介绍</div>
+      <div class="card-sub">${show.desc}</div>
+      ${show.sponsor ? `<div style="margin-top:10px;font-size:12px;color:var(--text-muted);">赞助企业：${show.sponsor}</div>` : ''}
+    </div>
+
+    <div style="background:#fff;margin-bottom:8px;">
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span class="card-title" style="margin-bottom:0">剧集列表</span>
+        <span style="font-size:13px;color:var(--primary-light);cursor:pointer;" onclick="navigate('page-episode-list', {showId:'${show.id}'})">全部 ›</span>
+      </div>
+      <div class="ep-grid">
+        ${show.episodes_data.slice(0, 8).map(ep => `
+          <div class="ep-item ${ep.watched ? 'watched' : ''}" onclick="navigate('page-episode-play', {showId:'${show.id}', epId:'${ep.id}'})">
+            <div class="ep-num">${ep.num}</div>
+            <div class="ep-label">${ep.watched ? '✓已看' : ep.duration}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${show.episodes_data.length > 8 ? `<div style="text-align:center;padding:12px 0 8px;font-size:13px;color:var(--primary-light);cursor:pointer;" onclick="navigate('page-episode-list', {showId:'${show.id}'})">查看全部 ${show.episodes_data.length} 集 ›</div>` : ''}
+    </div>
+
+    ${show.quizzes.length > 0 ? `
+    <div style="background:#fff;margin-bottom:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span class="card-title" style="margin-bottom:0">🎯 剧情竞猜</span>
+        <span style="font-size:12px;color:var(--success);font-weight:700;">答对得 EXP积分</span>
+      </div>
+      ${show.quizzes.slice(0, 2).map(q => `
+        <div style="padding:12px;background:var(--bg);border-radius:10px;margin-bottom:10px;cursor:pointer;" onclick="navigate('page-quiz', {showId:'${show.id}', quizId:'${q.id}'})">
+          <div style="font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:6px;">${q.question}</div>
+          <div style="font-size:12px;color:var(--accent);">答对可得 +${q.points} EXP →</div>
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
+
+    <div style="background:#fff;margin-bottom:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span class="card-title" style="margin-bottom:0">💬 评论区</span>
+        <span style="font-size:12px;color:var(--success);">发评论得+30 EXP</span>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <input type="text" id="comment-input" style="flex:1;border:1.5px solid rgba(0,0,0,0.1);border-radius:20px;padding:8px 14px;font-size:14px;outline:none;" placeholder="发表你的看法...">
+        <button style="background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;" onclick="submitShowComment('${show.id}')">发送</button>
+      </div>
+      ${show.comments.map(c => `
+        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-start;">
+          <div style="font-size:22px;">${c.avatar}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-main);">${c.user}</div>
+            <div style="font-size:13px;color:var(--text-sub);line-height:1.5;margin-top:3px;">${c.text}</div>
+            <div style="display:flex;gap:12px;margin-top:6px;">
+              <span style="font-size:11px;color:var(--text-muted);">${c.time}</span>
+              <span style="font-size:11px;color:var(--text-muted);">👍 ${c.likes}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  const bottomBar = document.getElementById('show-bottom-bar');
+  if (bottomBar) {
+    bottomBar.innerHTML = `
+      <button class="bab-btn ghost" onclick="navigate('page-episode-list', {showId:'${show.id}'})">剧集列表</button>
+      <button class="bab-btn accent" onclick="navigate('page-episode-play', {showId:'${show.id}', epId:'${show.episodes_data[0].id}'})">▶ 开始观看</button>
+    `;
+  }
+};
+
+// ========== 剧集列表 ==========
+window.render_page_episode_list = function(data) {
+  const shows = Store.get('shows');
+  const show = shows.find(s => s.id === (data && data.showId));
+  if (!show) return;
+  const el = document.getElementById('episode-list-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="padding:12px 0;">
+      <div style="padding:0 16px;margin-bottom:14px;font-size:14px;color:var(--text-sub);">
+        已观看 ${show.episodes_data.filter(e=>e.watched).length}/${show.episodes_data.length} 集，
+        已获 ${show.episodes_data.filter(e=>e.watched).length * show.reward_per_ep} WATCH积分
+      </div>
+      ${show.episodes_data.map(ep => `
+        <div class="list-item" onclick="navigate('page-episode-play', {showId:'${show.id}', epId:'${ep.id}'})">
+          <div class="li-icon" style="font-size:16px;font-weight:800;color:var(--primary);">${ep.num}</div>
+          <div class="li-info">
+            <div class="li-title">${ep.title}</div>
+            <div class="li-sub">${ep.duration} · ${ep.desc.slice(0,30)}...</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            ${ep.watched ? '<span class="badge badge-success">✓ 已看</span>' : `<span style="font-size:12px;color:var(--accent);">+${ep.reward}</span>`}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+// ========== 剧集播放 ==========
+window.render_page_episode_play = function(data) {
+  const shows = Store.get('shows');
+  const show = shows.find(s => s.id === (data && data.showId));
+  if (!show) return;
+  const ep = show.episodes_data.find(e => e.id === (data && data.epId));
+  if (!ep) return;
+
+  const el = document.getElementById('episode-play-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="player-page">
+      <div class="player-video" style="aspect-ratio:16/9;position:relative;">
+        <div class="player-back" onclick="goBack()">←</div>
+        <div class="player-mock">
+          <div style="font-size:48px;">${show.emoji}</div>
+          <div class="player-play-btn" id="play-btn" onclick="playEpisode('${show.id}', '${ep.id}')">▶</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:13px;">点击播放 · ${ep.duration}</div>
+        </div>
+        <div id="play-progress" style="position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.2);">
+          <div id="play-progress-bar" style="height:100%;background:var(--accent);width:0%;transition:width 0.1s;"></div>
+        </div>
+      </div>
+      <div class="player-info" style="padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">第${ep.num}集</div>
+            <div style="font-size:18px;font-weight:800;color:var(--text-main);">${ep.title}</div>
+          </div>
+          ${ep.watched ? '<span class="badge badge-success">已完成</span>' : `<span style="font-size:13px;font-weight:700;color:var(--accent);">+${ep.reward} WATCH</span>`}
+        </div>
+        <div style="font-size:14px;color:var(--text-sub);line-height:1.7;margin-bottom:16px;">${ep.desc}</div>
+        ${!ep.watched ? `
+        <div style="padding:14px;background:rgba(56,161,105,0.08);border-radius:10px;border:1px solid rgba(56,161,105,0.2);">
+          <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:4px;">🎁 观看奖励</div>
+          <div style="font-size:12px;color:var(--text-sub);">完整观看本集可获得 <strong>+${ep.reward} WATCH积分</strong>，快去体验吧！</div>
+        </div>
+        ` : '<div style="text-align:center;color:var(--success);font-size:14px;">✅ 已完整观看，积分已到账</div>'}
+        <div style="margin-top:16px;">
+          <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:10px;">更多剧集</div>
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">
+            ${show.episodes_data.map(e => `
+              <div onclick="navigate('page-episode-play', {showId:'${show.id}', epId:'${e.id}'})"
+                style="flex-shrink:0;width:56px;height:56px;border-radius:10px;background:${e.id===ep.id?'var(--primary)':e.watched?'rgba(56,161,105,0.1)':'#fff'};border:2px solid ${e.id===ep.id?'var(--primary)':e.watched?'var(--success)':'rgba(0,0,0,0.1)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;">
+                <div style="font-size:14px;font-weight:800;color:${e.id===ep.id?'#fff':e.watched?'var(--success)':'var(--primary)'};">${e.num}</div>
+                <div style="font-size:9px;color:${e.id===ep.id?'rgba(255,255,255,0.7)':'var(--text-muted)'};">${e.watched?'✓':''}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// ========== 竞猜页 ==========
+window.render_page_quiz = function(data) {
+  const shows = Store.get('shows');
+  const show = shows.find(s => s.id === (data && data.showId));
+  if (!show) return;
+  const quiz = show.quizzes.find(q => q.id === (data && data.quizId));
+  if (!quiz) return;
+
+  const el = document.getElementById('quiz-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="padding:20px 16px;">
+      <div style="background:linear-gradient(135deg,#0A1628,#1E3A5F);border-radius:16px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px;">🎯 答题得 +${quiz.points} EXP积分</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;line-height:1.5;">${quiz.question}</div>
+      </div>
+      <div id="quiz-options" style="display:flex;flex-direction:column;gap:10px;">
+        ${quiz.options.map((opt, i) => `
+          <div class="quiz-option" id="qopt-${i}" onclick="selectQuizOption('${show.id}', '${quiz.id}', ${i})"
+            style="padding:16px;background:#fff;border-radius:12px;box-shadow:var(--shadow);border:2px solid transparent;cursor:pointer;font-size:15px;font-weight:600;color:var(--text-main);transition:all 0.2s;">
+            <span style="color:var(--primary);margin-right:10px;">${['A','B','C','D'][i]}.</span>${opt}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+};
+
+// ========== 合力指数 ==========
+window.render_page_rank = function() {
+  filterRank(currentRankFilter, null);
+};
+
+function filterRank(type, el) {
+  currentRankFilter = type;
+  if (el) {
+    document.querySelectorAll('#page-rank .nbt-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  const companies = Store.get('companies');
+  let filtered = type === 'all' ? companies : companies.filter(c => {
+    if (type === 'ai') return ['AI视觉', 'AI'].includes(c.sector);
+    if (type === 'new') return ['新能源汽车', '半导体', '工程机械'].includes(c.sector);
+    if (type === 'energy') return ['新能源', '储能'].includes(c.sector);
+    return true;
+  });
+
+  const el2 = document.getElementById('rank-content');
+  if (!el2) return;
+
+  el2.innerHTML = `
+    <div class="index-overview">
+      <div class="io-title">合力指数综合评分</div>
+      <div class="io-score">84.6</div>
+      <div class="io-desc">较上月 +2.3 · 领跑AI+新质生产力赛道</div>
+      <div class="io-bars">
+        ${[['注意力热度', 88, 'var(--accent)'], ['人性温度(MP)', 76, 'var(--pioneer-light)'], ['品牌认知度', 82, 'var(--success)'], ['ESG评分', 71, 'var(--watch-color)']].map(([label, val, color]) => `
+          <div class="io-bar-item">
+            <div class="io-bar-label">${label}</div>
+            <div class="io-bar-track"><div class="io-bar-fill" style="width:${val}%;background:${color};"></div></div>
+            <div class="io-bar-val">${val}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div style="padding:4px 16px 10px;">
+      <div style="font-size:13px;color:var(--text-muted);">共 ${filtered.length} 家企业 · 实时更新</div>
+    </div>
+
+    ${filtered.map((c, i) => `
+      <div class="company-card" onclick="navigate('page-brand', {id:'${c.id}'})">
+        <div class="cc-rank">${i+1}</div>
+        <div class="cc-info" style="flex:1;">
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-sector">${c.sector} · ${c.code}</div>
+          <div class="cc-bar"><div class="cc-bar-fill" style="width:${c.index}%;"></div></div>
+        </div>
+        <div class="cc-score">
+          <div class="cc-score-num">${c.index}</div>
+          <div style="font-size:11px;${c.change>=0?'color:#E53E3E':'color:#38A169'};">${c.change>=0?'▲':'▼'}${Math.abs(c.change)}</div>
+          <div class="cc-score-label">合力指数</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ========== 品牌详情 ==========
+window.render_page_brand = function(data) {
+  const companies = Store.get('companies');
+  const company = data && data.id ? companies.find(c => c.id === data.id) : companies[0];
+  if (!company) return;
+
+  const el = document.getElementById('brand-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="brand-hero">
+      <div class="brand-hero-back" onclick="goBack()">←</div>
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0A1628,#1E3A5F);"></div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;opacity:0.15;">${company.name[0]}</div>
+      <div class="brand-hero-content">
+        <div class="brand-hero-name">${company.name}</div>
+        <div class="brand-hero-code">${company.code} · ${company.sector}</div>
+      </div>
+    </div>
+
+    <div style="padding:16px;background:#fff;margin-bottom:8px;">
+      <div class="brand-index-panel">
+        <div class="bip-head">
+          <div class="bip-score">${company.index}</div>
+          <div class="bip-info">
+            <div class="bip-label">合力综合指数</div>
+            <div class="bip-change">${company.change>=0?'▲':'▼'}${Math.abs(company.change)} 较上月</div>
+          </div>
+        </div>
+        <div class="bip-dims">
+          ${[['注意力热度', company.attention], ['品牌温度(MP)', company.mp], ['社区互动热', company.heat]].map(([label, val]) => `
+            <div class="bip-dim">
+              <div class="bip-dim-row">
+                <span class="bip-dim-label">${label}</span>
+                <span class="bip-dim-val">${val}</span>
+              </div>
+              <div class="bip-dim-bar"><div class="bip-dim-fill" style="width:${val}%;"></div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">企业介绍</div>
+      <div class="card-sub">${company.desc}</div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0">🎬 品牌故事</div>
+        <span style="font-size:13px;color:var(--primary-light);cursor:pointer;" onclick="navigate('page-brand-story', {id:'${company.id}'})">全部 ›</span>
+      </div>
+      ${company.stories.map(s => `
+        <div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04);last:no-border;" onclick="navigate('page-brand-story', {id:'${company.id}', story:'${s}'})">
+          <div style="font-size:14px;color:var(--text-main);">📌 ${s}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">点击阅读完整叙事 · 获取 EXP积分</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pioneer OS 叙事数据</div>
+      <div style="padding:14px;background:linear-gradient(135deg,#1A0A3D,#2D1B69);border-radius:10px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px;">区块链存证 · 实时更新</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${company.stories.length * 12}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">叙事章节</div></div>
+          <div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${company.mp}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">人性温度MP</div></div>
+          <div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${company.attention * 18}万</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">累计触达</div></div>
+        </div>
+        <div style="margin-top:12px;">
+          <button onclick="navigate('page-pioneer-hub')" style="width:100%;background:rgba(108,99,255,0.2);border:1px solid rgba(108,99,255,0.4);color:var(--pioneer-light);border-radius:8px;padding:8px;font-size:13px;cursor:pointer;">进入Pioneer OS查看完整叙事 →</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const bottomBar = document.getElementById('brand-bottom-bar');
+  if (bottomBar) {
+    bottomBar.innerHTML = `
+      <button class="bab-btn ghost" onclick="navigate('page-pioneer-hub')">🚀 Pioneer OS</button>
+      <button class="bab-btn accent" onclick="navigate('page-ai-writer')">✍️ 写研报得EXP</button>
+    `;
+  }
+};
+
+// ========== 品牌故事 ==========
+window.render_page_brand_story = function(data) {
+  const companies = Store.get('companies');
+  const company = data && data.id ? companies.find(c => c.id === data.id) : companies[0];
+  if (!company) return;
+
+  const el = document.getElementById('brand-story-content');
+  if (!el) return;
+
+  const story = data && data.story ? data.story : company.stories[0];
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0A1628,#1E3A5F);padding:32px 20px 24px;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:6px;">${company.name} · 品牌叙事</div>
+      <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;">${story}</div>
+      <div style="display:flex;gap:8px;">
+        <span class="badge badge-accent">MP贡献故事</span>
+        <span class="badge" style="background:rgba(108,99,255,0.15);color:var(--pioneer-light);">Pioneer OS存证</span>
+      </div>
+    </div>
+
+    <div style="padding:20px 16px;">
+      <div style="font-size:15px;line-height:1.9;color:var(--text-main);">
+        <p style="margin-bottom:16px;">${generateStoryContent(company.name, story, 0)}</p>
+        <p style="margin-bottom:16px;">${generateStoryContent(company.name, story, 1)}</p>
+        <blockquote style="border-left:3px solid var(--accent);padding:12px 16px;background:rgba(241,143,1,0.05);border-radius:0 10px 10px 0;margin:20px 0;">
+          "${generateStoryContent(company.name, story, 2)}"
+        </blockquote>
+        <p style="margin-bottom:16px;">${generateStoryContent(company.name, story, 3)}</p>
+      </div>
+
+      <div style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#1A0A3D,#2D1B69);border-radius:12px;">
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px;">🔗 Pioneer OS 区块链存证</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);font-family:monospace;word-break:break-all;">
+          Hash: 0x${Math.random().toString(16).slice(2,18)}...${Math.random().toString(16).slice(2,8)}<br>
+          Time: ${formatTime()}<br>
+          Chain: 长安链 (ChangAn Chain)<br>
+          Status: ✓ 已确认
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:14px;background:rgba(56,161,105,0.08);border-radius:10px;border:1px solid rgba(56,161,105,0.2);">
+        <div style="font-size:13px;font-weight:700;color:var(--success);margin-bottom:4px;">📖 阅读完成奖励</div>
+        <div style="font-size:12px;color:var(--text-sub);">完整阅读此叙事获得 <strong>+50 EXP积分</strong>，贡献值+80</div>
+        <button onclick="claimReadReward('${company.id}')" style="margin-top:8px;width:100%;background:var(--success);color:#fff;border:none;padding:8px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">领取阅读奖励</button>
+      </div>
+    </div>
+  `;
+};
+
+function generateStoryContent(companyName, story, idx) {
+  const templates = [
+    `在中国新质生产力的浪潮中，${companyName}以独特的技术路径和战略眼光，书写了属于自己的时代叙事。"${story}"不仅是一个产品或技术的故事，更是一家企业在AI时代重新定义自身价值的宣言。`,
+    `从数据来看，${companyName}在注意力经济维度的表现远超传统财报所能呈现的价值。合力指数显示，其在C端用户中的品牌温度持续攀升，这种"人性化的温度"正是AI时代企业护城河的新维度。`,
+    `我们不只看财报数字，更看人心的流向。${companyName}在用户心中的位置，才是真正的价值锚点。— 合力生态指数研究院`,
+    `在Pioneer OS的叙事框架下，${companyName}的"${story}"已被完整记录在链上，成为可追溯、可验证的产业历史档案。这些数据将成为未来合力指数的重要参考，帮助投资者穿越信息噪音，发现真实的企业价值。`
+  ];
+  return templates[idx] || templates[0];
+}
+
+// ========== 我的页面 ==========
+window.render_page_mine = function() {
+  const user = Store.get('user');
+  const el = document.getElementById('mine-content');
+  if (!el) return;
+
+  const levelProgress = Math.min(100, Math.round((user.willpower - 70000) / (150000 - 70000) * 100));
+
+  el.innerHTML = `
+    <div class="mine-header">
+      <div class="mine-user-row">
+        <div class="mine-avatar">${user.avatar}</div>
+        <div class="mine-user-info">
+          <div class="mine-name">${user.nickname}</div>
+          <div class="mine-level">${user.levelName}</div>
+          <div style="margin-top:6px;"><div class="progress-bar" style="height:4px;"><div class="progress-fill" style="width:${levelProgress}%;background:var(--accent);"></div></div></div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:3px;">${formatNumber(user.willpower)} / 150,000 贡献值</div>
+        </div>
+        <button class="mine-checkin-btn" onclick="doCheckin()" ${user.checkinToday ? 'disabled style="opacity:0.5;"' : ''}>
+          ${user.checkinToday ? '✅已签' : '📅签到'}
+        </button>
+      </div>
+      <div class="mine-points-grid">
+        <div class="mpg-item" onclick="navigate('page-points-detail')">
+          <div class="mpg-num">${formatNumber(user.hp)}</div>
+          <div class="mpg-label">HP消费积分</div>
+        </div>
+        <div class="mpg-item" onclick="navigate('page-points-detail')">
+          <div class="mpg-num">${formatNumber(user.watch)}</div>
+          <div class="mpg-label">WATCH观看</div>
+        </div>
+        <div class="mpg-item" onclick="navigate('page-points-detail')">
+          <div class="mpg-num">${formatNumber(user.mp)}</div>
+          <div class="mpg-label">MP意义贡献</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:12px;background:var(--bg);"></div>
+
+    <div class="mine-menu">
+      <div class="mine-menu-item" onclick="navigate('page-order-list')">
+        <div class="mmi-icon">📦</div>
+        <div class="mmi-label">我的订单</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-willpower')">
+        <div class="mmi-icon">⚡</div>
+        <div class="mmi-label">意志吞吐量</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-honor-list')">
+        <div class="mmi-icon">🏅</div>
+        <div class="mmi-label">荣誉徽章</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-points-detail')">
+        <div class="mmi-icon">💰</div>
+        <div class="mmi-label">积分明细</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-points-exchange')">
+        <div class="mmi-icon">🔄</div>
+        <div class="mmi-label">积分兑换</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-mp-explain')">
+        <div class="mmi-icon">💎</div>
+        <div class="mmi-label">MP意义积分说明</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-agent')">
+        <div class="mmi-icon">🦞</div>
+        <div class="mmi-label">我的龙虾Agent</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-about')">
+        <div class="mmi-icon">ℹ️</div>
+        <div class="mmi-label">关于合力生态</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+      <div class="mine-menu-item" onclick="navigate('page-merchant-login')">
+        <div class="mmi-icon">🏪</div>
+        <div class="mmi-label">商家入驻</div>
+        <div class="mmi-arrow">›</div>
+      </div>
+    </div>
+  `;
+};
+
+// ========== 意志吞吐量 ==========
+window.render_page_willpower = function() {
+  const user = Store.get('user');
+  const records = Store.get('wpRecords');
+  const el = document.getElementById('willpower-content');
+  if (!el) return;
+
+  const level = Store.get('levels').find(l => user.willpower >= l.minWP && user.willpower < l.maxWP) || Store.get('levels')[5];
+  const progress = Math.min(100, Math.round((user.willpower - level.minWP) / (level.maxWP - level.minWP) * 100));
+
+  el.innerHTML = `
+    <div class="wp-hero">
+      <div class="wp-gauge">
+        <div class="wp-gauge-circle" style="background:conic-gradient(var(--accent) 0% ${progress*3.6}deg, rgba(255,255,255,0.1) ${progress*3.6}deg 360deg);">
+          <div class="wp-gauge-inner">
+            <div class="wp-gauge-num">${progress}%</div>
+            <div class="wp-gauge-label">进度</div>
+          </div>
+        </div>
+      </div>
+      <div class="wp-level">${level.name}</div>
+      <div style="font-size:24px;font-weight:900;color:var(--accent);margin:8px 0;">${formatNumber(user.willpower)}</div>
+      <div class="wp-rank">全平台排名第 <strong style="color:var(--accent);">${user.rank}</strong> 位</div>
+      <div style="margin-top:12px;font-size:12px;color:rgba(255,255,255,0.45);">下一等级：${level.maxWP - user.willpower > 0 ? `还需 ${formatNumber(level.maxWP - user.willpower)} 贡献值` : '已达最高等级'}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">等级权益</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${level.benefits.map(b => `<div style="font-size:13px;color:var(--text-sub);display:flex;align-items:center;gap:8px;"><span style="color:var(--success);">✓</span>${b}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;" onclick="navigate('page-honor-list')">
+      <span style="font-size:15px;font-weight:700;color:var(--text-main);">🏅 荣誉兑换</span>
+      <span style="font-size:13px;color:var(--primary-light);">查看全部 ›</span>
+    </div>
+
+    <div style="padding:12px 16px 0;font-size:14px;font-weight:700;color:var(--text-main);">贡献记录</div>
+    <div style="background:#fff;margin-top:8px;">
+      ${records.map(r => `
+        <div style="display:flex;align-items:center;padding:12px 16px;gap:12px;border-bottom:1px solid rgba(0,0,0,0.04);">
+          <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(241,143,1,0.1);">${getTypeIcon(r.type)}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;color:var(--text-main);">${r.action}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.time}</div>
+          </div>
+          <div style="font-size:15px;font-weight:800;color:var(--success);">+${r.amount}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+function getTypeIcon(type) {
+  const icons = { watch: '👁', exp: '🧪', gov: '🗳', data: '📡', mp: '💎', checkin: '📅' };
+  return icons[type] || '⚡';
+}
+
+// ========== 荣誉兑换 ==========
+window.render_page_honor_list = function() {
+  const honors = Store.get('honors');
+  const user = Store.get('user');
+  const el = document.getElementById('honor-list-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="padding:16px 0 8px;">
+      <div style="padding:0 16px 12px;font-size:14px;color:var(--text-sub);line-height:1.6;">
+        荣誉徽章是你在合力生态中留下的印记。每枚荣誉都需要贡献值或积分来兑换，代表你对平台的真实贡献。
+      </div>
+      ${honors.map(h => `
+        <div class="honor-card ${h.claimed ? 'claimed' : ''}" onclick="showHonorDetail('${h.id}')">
+          <div class="hc-icon">${h.icon}</div>
+          <div class="hc-info">
+            <div class="hc-title">${h.title}</div>
+            <div class="hc-req">${h.req}</div>
+            <div class="hc-cost">${h.cost} ${h.costType}</div>
+          </div>
+          <button class="hc-btn ${h.claimed ? 'claimed' : 'available'}" onclick="event.stopPropagation();claimHonorAction('${h.id}')">
+            ${h.claimed ? '已兑换' : '兑换'}
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+// ========== 积分详情 ==========
+window.render_page_points_detail = function() {
+  const user = Store.get('user');
+  const records = Store.get('pointsRecords');
+  const el = document.getElementById('points-detail-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="points-header">
+      <div class="ph-total">
+        <div class="ph-total-num">${formatNumber(user.hp)}</div>
+        <div class="ph-total-label">HP 消费积分 (可用余额)</div>
+      </div>
+      <div class="ph-types">
+        ${[['HP', user.hp, '#DD6B20'], ['WATCH', user.watch, '#3182CE'], ['EXP', user.exp, '#805AD5'], ['GOV', user.gov, '#2F855A'], ['DATA', user.data, '#2B6CB0'], ['MP', user.mp, '#D69E2E']].map(([name, val, color]) => `
+          <div class="ph-type-pill" style="">
+            <span style="color:${color};font-weight:800;">${name}</span>: ${formatNumber(val)}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div style="margin:16px 16px 8px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:14px;font-weight:700;color:var(--text-main);">积分流水</span>
+      <span style="font-size:13px;color:var(--primary-light);cursor:pointer;" onclick="navigate('page-points-exchange')">兑换积分 ›</span>
+    </div>
+    <div style="background:#fff;">
+      ${records.map(r => {
+        const colors = { hp: '#DD6B20', watch: '#3182CE', exp: '#805AD5', gov: '#2F855A', data: '#2B6CB0', mp: '#D69E2E' };
+        const icons = { hp: '💰', watch: '👁', exp: '🧪', gov: '🗳', data: '📡', mp: '💎' };
+        const color = colors[r.type] || '#718096';
+        const icon = icons[r.type] || '⚡';
+        return `
+          <div class="points-record">
+            <div class="pr-icon" style="background:${color}20;">${icon}</div>
+            <div class="pr-info">
+              <div class="pr-action">${r.action}</div>
+              <div class="pr-time">${r.time}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="pr-amount ${r.amount > 0 ? 'positive' : 'negative'}" style="color:${r.amount > 0 ? '#38A169' : '#E53E3E'};">
+                ${r.amount > 0 ? '+' : ''}${r.amount} ${r.cat}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+};
+
+// ========== 积分兑换 ==========
+window.render_page_points_exchange = function() {
+  const user = Store.get('user');
+  const el = document.getElementById('points-exchange-content');
+  if (!el) return;
+
+  const exchanges = [
+    { type: 'watch', icon: '👁', name: 'WATCH → HP', rate: '100 WATCH = 20 HP', color: '#3182CE', amount: user.watch },
+    { type: 'exp', icon: '🧪', name: 'EXP → HP', rate: '100 EXP = 50 HP', color: '#805AD5', amount: user.exp },
+    { type: 'gov', icon: '🗳', name: 'GOV → HP', rate: '100 GOV = 120 HP', color: '#2F855A', amount: user.gov },
+    { type: 'data', icon: '📡', name: 'DATA → HP', rate: '100 DATA = 80 HP', color: '#2B6CB0', amount: user.data },
+    { type: 'mp', icon: '💎', name: 'MP → HP', rate: '100 MP = 150 HP', color: '#D69E2E', amount: user.mp }
+  ];
+
+  el.innerHTML = `
+    <div style="padding:16px;background:linear-gradient(135deg,#0A1628,#1E3A5F);">
+      <div style="font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:8px;">单向兑换：非HP积分可兑换为HP，不可反向</div>
+      <div style="font-size:20px;font-weight:800;color:var(--accent);">当前 HP: ${formatNumber(user.hp)}</div>
+    </div>
+
+    <div style="padding:16px 16px 8px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:12px;">选择兑换类型</div>
+      <div class="exchange-options">
+        ${exchanges.map(ex => `
+          <div class="exchange-card" onclick="openExchangeModal('${ex.type}')">
+            <div class="exc-icon" style="color:${ex.color};">${ex.icon}</div>
+            <div class="exc-name">${ex.name}</div>
+            <div class="exc-rate">${ex.rate}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">余额: ${formatNumber(ex.amount)}</div>
+            <button class="exc-btn" style="color:${ex.color};background:${ex.color}15;">立即兑换</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 兑换规则说明</div>
+      <div style="font-size:13px;color:var(--text-sub);line-height:1.8;">
+        • <strong>积分是平台对你贡献的凭证</strong>，HP是消费端货币<br>
+        • <strong>单向兑换</strong>：各类型积分→HP，不可逆向兑换<br>
+        • <strong>区块链存证</strong>：每笔兑换上链记录，可审计<br>
+        • <strong>动态平衡</strong>：兑换的HP来自赞助商储备池<br>
+        • 每天最多兑换10000 HP等值积分
+      </div>
+    </div>
+  `;
+};
+
+// ========== 商城 ==========
+window.render_page_mall = function() {
+  filterMall(currentMallFilter, null);
+};
+
+function filterMall(type, el) {
+  currentMallFilter = type;
+  if (el) {
+    document.querySelectorAll('#page-mall .nbt-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  const products = Store.get('products');
+  const user = Store.get('user');
+  const filtered = type === 'all' ? products : products.filter(p => p.category === type);
+  const el2 = document.getElementById('mall-content');
+  if (!el2) return;
+
+  el2.innerHTML = `
+    <div class="mall-banner">
+      <div class="mb-info">
+        <div class="mb-title">积分商城</div>
+        <div class="mb-sub">用积分兑换真实权益</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.55);">HP余额</div>
+        <div class="mb-points">${formatNumber(user.hp)}</div>
+      </div>
+    </div>
+    <div class="product-grid">
+      ${filtered.map(p => `
+        <div class="product-card" onclick="navigate('page-product', {id:'${p.id}'})">
+          <div class="pc-img">
+            ${p.emoji}
+            ${p.tags.includes('热门') || p.tags.includes('爆款') ? '<div class="pc-tag">热门</div>' : p.tags.includes('限量') ? '<div class="pc-tag" style="background:var(--pioneer);">限量</div>' : ''}
+          </div>
+          <div class="pc-body">
+            <div class="pc-name">${p.name}</div>
+            <div class="pc-company">${p.company}</div>
+            <div style="display:flex;align-items:baseline;gap:4px;">
+              <div class="pc-price">${formatNumber(p.price)}</div>
+              <div class="pc-price-label">HP</div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ========== 商品详情 ==========
+window.render_page_product = function(data) {
+  const products = Store.get('products');
+  const product = data && data.id ? products.find(p => p.id === data.id) : products[0];
+  if (!product) return;
+  const user = Store.get('user');
+  const canBuy = user.hp >= product.price;
+
+  const el = document.getElementById('product-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="height:240px;background:linear-gradient(135deg,#F7FAFC,#EDF2F7);display:flex;align-items:center;justify-content:center;position:relative;">
+      <div style="font-size:96px;">${product.emoji}</div>
+      <div style="position:absolute;top:16px;left:16px;width:36px;height:36px;background:rgba(0,0,0,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="goBack()">←</div>
+      ${product.tags.includes('限量') ? '<div style="position:absolute;top:16px;right:16px;background:var(--pioneer);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;">限量</div>' : ''}
+    </div>
+
+    <div style="background:#fff;padding:16px;margin-bottom:8px;">
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        ${product.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+      </div>
+      <div style="font-size:20px;font-weight:800;color:var(--text-main);margin-bottom:4px;">${product.name}</div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">${product.company}</div>
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <div style="font-size:28px;font-weight:900;color:var(--accent);">${formatNumber(product.price)}</div>
+        <div style="font-size:14px;color:var(--text-muted);">HP积分</div>
+        <div style="font-size:13px;text-decoration:line-through;color:var(--text-muted);">原价 ${formatNumber(product.originalPrice)}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">商品详情</div>
+      <div class="card-sub">${product.desc}</div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text-muted);">库存：${product.stock} 件 · 上架企业：${product.company}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">积分说明</div>
+      <div style="font-size:13px;color:var(--text-sub);line-height:1.7;">
+        • 消耗 HP 积分（消费积分）完成兑换<br>
+        • 不足HP？可将 WATCH/EXP 等积分兑换为HP<br>
+        • 兑换记录链上存证，不可撤销<br>
+        • 实体商品7日内发货；数字权益即时到账
+      </div>
+    </div>
+  `;
+
+  const bottomBar = document.getElementById('product-bottom-bar');
+  if (bottomBar) {
+    bottomBar.innerHTML = `
+      ${!canBuy ? `<div style="flex:1;padding:8px;text-align:center;font-size:13px;color:var(--danger);">HP不足，先去<span style="color:var(--primary);cursor:pointer;" onclick="navigate('page-points-exchange')">兑换积分</span></div>` : ''}
+      <button class="bab-btn ${canBuy ? 'accent' : 'ghost'}" onclick="${canBuy ? `navigate('page-order-confirm', {productId:'${product.id}'})` : `navigate('page-points-exchange')`}">
+        ${canBuy ? '立即兑换' : '去兑换积分'}
+      </button>
+    `;
+  }
+};
+
+// ========== 订单确认 ==========
+window.render_page_order_confirm = function(data) {
+  const products = Store.get('products');
+  const product = data && data.productId ? products.find(p => p.id === data.productId) : products[0];
+  if (!product) return;
+  const user = Store.get('user');
+
+  const el = document.getElementById('order-confirm-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="order-confirm-body">
+      <div class="oc-product-row">
+        <div class="oc-product-img">${product.emoji}</div>
+        <div>
+          <div class="oc-product-name">${product.name}</div>
+          <div class="oc-product-company">${product.company}</div>
+        </div>
+      </div>
+      <div class="oc-detail">
+        <div class="oc-row"><span class="oc-label">商品价格</span><span class="oc-value">${formatNumber(product.price)} HP</span></div>
+        <div class="oc-row"><span class="oc-label">优惠</span><span class="oc-value" style="color:var(--success);">-0</span></div>
+        <div class="oc-row"><span class="oc-label">当前HP</span><span class="oc-value">${formatNumber(user.hp)}</span></div>
+        <div class="oc-row"><span class="oc-label">兑换后余额</span><span class="oc-value accent">${formatNumber(user.hp - product.price)}</span></div>
+      </div>
+    </div>
+  `;
+
+  const bottomBar = document.getElementById('order-confirm-bar');
+  if (bottomBar) {
+    bottomBar.innerHTML = `
+      <button class="bab-btn ghost" onclick="goBack()">返回</button>
+      <button class="bab-btn accent" onclick="doCreateOrder('${product.id}')">确认兑换</button>
+    `;
+  }
+};
+
+// ========== 订单列表 ==========
+window.render_page_order_list = function() {
+  const user = Store.get('user');
+  const el = document.getElementById('order-list-content');
+  if (!el) return;
+
+  el.innerHTML = user.orders.length === 0 ? `
+    <div class="empty-state">
+      <div class="empty-icon">📦</div>
+      <div class="empty-title">暂无订单</div>
+      <div class="empty-desc">去积分商城兑换你喜欢的商品吧</div>
+      <button onclick="navigate('page-mall')" style="margin-top:16px;background:var(--primary);color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;cursor:pointer;">去商城</button>
+    </div>
+  ` : `
+    <div style="padding:12px 0;">
+      ${user.orders.map(o => `
+        <div class="list-item">
+          <div class="li-icon">📦</div>
+          <div class="li-info">
+            <div class="li-title">${o.productName}</div>
+            <div class="li-sub">${o.time}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:700;color:var(--accent);">-${o.total} HP</div>
+            <span class="badge badge-success">${o.status}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+// ========== AI写作助手 ==========
+window.render_page_ai_writer = function() {
+  const el = document.getElementById('ai-writer-content');
+  if (!el) return;
+
+  const templates = [
+    { icon: '📊', title: '上市公司分析报告', desc: '选择一家合力指数企业，AI辅助生成专业深度研报，获取最高+300 EXP', reward: '+300 EXP/篇' },
+    { icon: '🎬', title: '综艺内容点评', desc: '观看《智造者》剧集后，写下你的深度观感与产业洞察', reward: '+100 EXP/篇' },
+    { icon: '💡', title: '产业趋势洞察', desc: 'AI+X赛道深度分析，发现被市场忽视的价值信号', reward: '+200 EXP/篇' },
+    { icon: '🔮', title: 'MP故事贡献', desc: '记录企业人性温度瞬间，为合力指数MP维度添砖加瓦', reward: '+50 MP/篇' }
+  ];
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0A1628,#1E3A5F);padding:28px 20px 20px;">
+      <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;">✍️ AI写作助手</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.55);">发布优质内容，赚取 EXP/MP 积分</div>
+    </div>
+    <div style="padding:16px 0 8px;">
+      <div style="padding:0 16px 12px;font-size:14px;font-weight:700;color:var(--text-main);">选择写作模板</div>
+      <div class="writer-templates">
+        ${templates.map(t => `
+          <div class="wt-card" onclick="openWriterTemplate('${t.title}')">
+            <div class="wt-icon">${t.icon}</div>
+            <div class="wt-info">
+              <div class="wt-title">${t.title}</div>
+              <div class="wt-desc">${t.desc}</div>
+              <div class="wt-reward">🎁 ${t.reward}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+};
+
+// ========== MP积分说明 ==========
+window.render_page_mp_explain = function() {
+  const el = document.getElementById('mp-explain-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="mp-hero">
+      <div class="mp-icon">💎</div>
+      <div class="mp-title">MP · 意义贡献积分</div>
+      <div class="mp-sub">衡量你在AI时代人性温度的贡献<br>从注意力到意义，从消费到共创</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">什么是MP积分？</div>
+      <div class="card-sub">
+        MP（Meaning Point）是合力生态独创的第五维度积分。在AGI元年，99.9%的认知劳动由机器完成，但人类的温度、判断与意义，仍是无可替代的价值源泉。<br><br>
+        MP积分正是对这0.1%「人性贡献」的量化与激励。它衡量你在平台上创造的情感连接、意义叙事和人性温度。
+      </div>
+    </div>
+
+    <div style="padding:0 16px 8px;font-size:15px;font-weight:700;color:var(--text-main);">三大评估维度</div>
+    <div class="mp-dimension">
+      <div class="mpd-head"><div class="mpd-icon">🏢</div><div class="mpd-title">企业社会意义贡献度</div><div class="mpd-score">82</div></div>
+      <div class="mpd-desc">评估企业在社会层面创造的真实意义：解决了什么问题？改善了哪些人的生活？创造了什么超越商业的价值？</div>
+    </div>
+    <div class="mp-dimension">
+      <div class="mpd-head"><div class="mpd-icon">❤️</div><div class="mpd-title">品牌情感连接指数</div><div class="mpd-score">76</div></div>
+      <div class="mpd-desc">用户与品牌之间形成的情感纽带强度。不只是满意度，而是共鸣度——品牌是否触动了你心底的某个角落？</div>
+    </div>
+    <div class="mp-dimension">
+      <div class="mpd-head"><div class="mpd-icon">🤝</div><div class="mpd-title">技术人性化应用评分</div><div class="mpd-score">71</div></div>
+      <div class="mpd-desc">技术应用是否让人感到被尊重、被理解？AI产品是否保留了人的主体性？这是MP最核心的测量维度。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">MP的更大价值</div>
+      <div class="card-sub">
+        MP积分不只是平台内的小积分，它构成了<strong>「善意资本」配置的参考标准</strong>：<br><br>
+        • 为ESG基金提供量化参考<br>
+        • 为影响力投资提供决策依据<br>
+        • 为上市公司提供新型市值叙事框架<br>
+        • 为C端个人提供意义变现通道<br><br>
+        <em style="color:var(--accent);">让注意力被定价，让人性被传承。</em>
+      </div>
+    </div>
+
+    <div style="height:20px;"></div>
+  `;
+};
+
+// ========== 关于页面 ==========
+window.render_page_about = function() {
+  const el = document.getElementById('about-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="about-hero">
+      <div class="about-logo">🔗</div>
+      <div class="about-title">合力生态</div>
+      <div class="about-sub">HARMONY LINKAGE<br>注意力经济 × AI Agent 新质生产力平台<br><br>AI时代「人性价值」的挖掘、定价与流通平台</div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">我们的使命</div>
+      <div class="card-sub">
+        AGI元年到来，99.9%的认知劳动将由机器完成。合力生态守护AI时代最后的0.1%——<strong>人类的温度、判断与意义</strong>。<br><br>
+        我们相信：注意力是后AI时代最稀缺的资产。合力生态是那个让注意力被定价、让人性被传承的平台。
+      </div>
+    </div>
+
+    <div style="padding:16px 16px 8px;font-size:15px;font-weight:700;color:var(--text-main);">三步战略</div>
+
+    <div class="strategy-card">
+      <div class="sc-stage validate">验证期 · 2026</div>
+      <div class="sc-title">验证全链路闭环</div>
+      <div class="sc-desc">《智造者》第一季播出，验证综艺→积分→指数→Agent全链路闭环。天使轮融资800-1000万，投前估值1.2亿。</div>
+    </div>
+    <div class="strategy-card">
+      <div class="sc-stage growth">成长期 · 2027</div>
+      <div class="sc-title">兑换商城规模化</div>
+      <div class="sc-desc">兑换商城规模化运营，GMV快速增长，更多B端企业接入生态。龙虾Agent API接口开放，注意力资产化变现规模扩大。</div>
+    </div>
+    <div class="strategy-card">
+      <div class="sc-stage ecosystem">生态期 · 2028</div>
+      <div class="sc-title">DAO共建·指数级裂变</div>
+      <div class="sc-desc">Agent+交易所，DAO组织共建生态指数级裂变。做国际化人性注意力资产平台，让C端注意力全球可定价、可流通。</div>
+    </div>
+
+    <div style="padding:16px 16px 8px;font-size:15px;font-weight:700;color:var(--text-main);">五重壁垒</div>
+    <div class="card">
+      ${[
+        ['🤝', '团队信任基础', '长期合作积累，执行效率高'],
+        ['📜', '数交所备案合规', '合规门槛高，先发合规基础'],
+        ['🏢', '企业高管关系网络', '每年数场上市公司颁奖，高管关系过百'],
+        ['📊', '数据飞轮沉淀', '多积分兑换体系形成数据飞轮，网络效应强'],
+        ['🌐', '注意力经济先发生态位', '首个将注意力所有权归还个人的新生态']
+      ].map(([icon, title, desc], i) => `
+        <div style="display:flex;gap:12px;${i > 0 ? 'margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.04);' : ''}">
+          <div style="font-size:20px;">${icon}</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:2px;">${i+1}. ${title}</div>
+            <div style="font-size:12px;color:var(--text-sub);">${desc}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="era-card" style="margin-top:16px;">
+      <div class="era-quote">"让注意力被定价，让人性被传承。合力生态期待与投资机构、B端和C端伙伴共建共享"</div>
+      <div class="era-source">— 合力生态 创始人</div>
+      <div style="margin-top:12px;display:flex;gap:12px;">
+        <div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:800;color:var(--accent);">1.2亿</div><div style="font-size:11px;color:rgba(255,255,255,0.4);">投前估值</div></div>
+        <div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:800;color:var(--accent);">800万</div><div style="font-size:11px;color:rgba(255,255,255,0.4);">天使轮融资</div></div>
+        <div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:800;color:var(--accent);">$5000亿</div><div style="font-size:11px;color:rgba(255,255,255,0.4);">AI Agent市场</div></div>
+      </div>
+    </div>
+    <div style="height:20px;"></div>
+  `;
+};
+
+// ========== 商家登录 ==========
+window.render_page_merchant_login = function() {
+  const el = document.getElementById('merchant-login-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="login-page">
+      <div class="login-logo">
+        <div class="login-logo-icon">🏪</div>
+        <div class="login-logo-title">商家入驻</div>
+        <div class="login-logo-sub">B端企业数据看板 · 合力智脑商家版</div>
+      </div>
+      <div class="login-form">
+        <input type="email" id="merchant-email" class="form-input" placeholder="企业邮箱" value="byd@example.com">
+        <input type="password" id="merchant-pwd" class="form-input" placeholder="密码" value="123456">
+        <button class="login-btn" onclick="doMerchantLogin()">登录商家后台</button>
+      </div>
+      <div class="login-alt">测试账号：byd@example.com / 123456</div>
+      <div style="margin-top:24px;padding:16px;background:var(--bg);border-radius:var(--radius);">
+        <div style="font-size:13px;font-weight:700;color:var(--text-main);margin-bottom:8px;">商家入驻权益</div>
+        ${['数据看板：实时查看品牌曝光与ROI', '合力智脑商家版：AI自动生成运营报告', '积分激励任务：驱动用户互动', '合力指数：品牌人性温度实时管理'].map(item => `
+          <div style="font-size:12px;color:var(--text-sub);margin-bottom:6px;display:flex;gap:6px;"><span style="color:var(--success);">✓</span>${item}</div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+};
+
+// ========== 商家后台 ==========
+window.render_page_merchant_dashboard = function() {
+  const merchant = Store.get('merchant');
+  const d = merchant.dashboard;
+  const el = document.getElementById('merchant-dashboard-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="merchant-header">
+      <div class="mh-title">${merchant.name}</div>
+      <div class="mh-sub">商家数据看板 · ${formatDate()}</div>
+    </div>
+
+    <div style="padding:16px 0;">
+      <div style="padding:0 16px 10px;font-size:14px;font-weight:700;color:var(--text-main);">本月核心指标</div>
+      <div class="dashboard-stats">
+        ${[
+          { icon: '💰', num: `¥${formatNumber(d.monthRevenue)}`, label: '月度收入', change: '+18%', up: true },
+          { icon: '📦', num: d.monthOrders, label: '月度订单', change: '+12%', up: true },
+          { icon: '👥', num: formatNumber(d.activeUsers), label: '活跃用户', change: '+16%', up: true },
+          { icon: '📊', num: d.brandScore, label: '品牌指数', change: '+3.2', up: true }
+        ].map(item => `
+          <div class="ds-card">
+            <div class="ds-icon">${item.icon}</div>
+            <div class="ds-num">${item.num}</div>
+            <div class="ds-label">${item.label}</div>
+            <div class="ds-change ${item.up ? 'up' : 'down'}">${item.up ? '↑' : '↓'} ${item.change}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0">注意力转化漏斗</div>
+        <span style="font-size:12px;color:var(--success);">ROI 4.2x 行业均值</span>
+      </div>
+      ${[
+        ['曝光触达', '18,924', 100],
+        ['内容互动', '8,347', 44],
+        ['积分参与', '3,629', 19],
+        ['商城转化', '1,283', 7],
+        ['复购用户', '456', 2.4]
+      ].map(([label, num, pct]) => `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+            <span style="font-size:12px;color:var(--text-sub);">${label}</span>
+            <span style="font-size:12px;font-weight:700;color:var(--text-main);">${num} (${pct}%)</span>
+          </div>
+          <div class="chart-bar-h"><div class="chart-bar-h-fill" style="width:${pct}%;"></div></div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div style="padding:12px 16px 8px;font-size:14px;font-weight:700;color:var(--text-main);">快捷操作</div>
+    <div style="margin:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      ${[
+        { icon: '🤖', label: '合力智脑商家版', action: "navigate('page-brain')" },
+        { icon: '📊', label: '导出运营报告', action: "showToast('正在生成本月运营报告...')" },
+        { icon: '🎯', label: '发布积分激励任务', action: "showToast('激励任务发布成功！')" },
+        { icon: '📈', label: '品牌指数管理', action: "navigate('page-rank')" }
+      ].map(btn => `
+        <div onclick="${btn.action}" style="background:#fff;border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:var(--shadow);">
+          <span style="font-size:22px;">${btn.icon}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text-main);">${btn.label}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+/* =============================================
+   app-part2.js - 交互逻辑层
+   合力生态 HarmonyLink v2.0
+   ============================================= */
+
+// ========== 龙虾Agent ==========
+window.render_page_agent = function() {
+  const user = Store.get('user');
+  const templates = Store.get('agentTemplates');
+  const el = document.getElementById('agent-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="agent-hero" style="background:linear-gradient(135deg,#1A0A0A,#4A1010);">
+      <div class="agent-hero-icon">🦞</div>
+      <div class="agent-hero-title">龙虾Agent</div>
+      <div class="agent-hero-sub">注意力资产化变现通道<br>主动接入Agent，将你的注意力转化为可交易资产</div>
+      <div class="agent-stat-row">
+        <div class="asr-item"><div class="asr-num">${user.agentCreated ? '已创建' : '未创建'}</div><div class="asr-label">Agent状态</div></div>
+        <div class="asr-item"><div class="asr-num">${formatNumber(user.mp)}</div><div class="asr-label">MP积分余额</div></div>
+        <div class="asr-item"><div class="asr-num">${user.level}</div><div class="asr-label">当前等级</div></div>
+      </div>
+    </div>
+
+    ${user.agentCreated ? `
+    <div style="margin:16px;padding:16px;background:linear-gradient(135deg,rgba(56,161,105,0.1),rgba(56,161,105,0.05));border:1px solid rgba(56,161,105,0.3);border-radius:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-size:28px;">🦞</div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text-main);">${user.agentName}</div>
+          <div style="font-size:12px;color:var(--success);">● 运行中</div>
+        </div>
+        <div style="margin-left:auto;">
+          <span class="badge badge-success">已激活</span>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text-sub);">你的Agent正在自动运行，积分持续积累中</div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button style="flex:1;padding:8px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;" onclick="navigate('page-agent-market')">浏览Agent市场</button>
+        <button style="flex:1;padding:8px;background:var(--bg);border:1px solid rgba(0,0,0,0.1);border-radius:8px;font-size:13px;cursor:pointer;" onclick="showToast('Agent数据同步中...')">查看收益</button>
+      </div>
+    </div>
+    ` : `
+    <div style="margin:16px;padding:16px;background:rgba(241,143,1,0.06);border:1px dashed rgba(241,143,1,0.3);border-radius:16px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">🦞</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;">还未创建个人Agent</div>
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">创建你的专属龙虾Agent，开启注意力资产化之旅</div>
+      <button onclick="navigate('page-agent-create')" style="background:linear-gradient(135deg,var(--accent),var(--accent-light));color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;">+ 创建我的Agent</button>
+    </div>
+    `}
+
+    <div style="padding:16px 16px 10px;">
+      <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:4px;">Agent能力类型</div>
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">选择你的Agent类型，自动执行对应任务，持续获取积分</div>
+      <div class="agent-type-grid">
+        ${templates.map(t => `
+          <div class="agent-type-card ${!t.available ? 'opacity-50' : ''}">
+            <div class="atc-icon">${t.icon}</div>
+            <div class="atc-title">${t.name}</div>
+            <div class="atc-desc">${t.desc}</div>
+            <div class="atc-reward">🎁 ${t.reward}</div>
+            ${!t.available ? '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">即将开放</div>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔑 三大技术支柱</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${[
+          ['⛓️', '区块链存证', '每次操作上链记录，积分凭证不可篡改'],
+          ['⚡', '智能合约自动化', '行为达标自动触发积分铸造，自动化率92%'],
+          ['🔒', '隐私计算', '联邦学习+TEE，数据可用不可见']
+        ].map(([icon, title, desc]) => `
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="font-size:20px;">${icon}</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-main);">${title}</div>
+              <div style="font-size:12px;color:var(--text-sub);margin-top:2px;">${desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+};
+
+// ========== Agent创建 ==========
+window.render_page_agent_create = function() {
+  const templates = Store.get('agentTemplates').filter(t => t.available);
+  const el = document.getElementById('agent-create-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="padding:20px 16px;">
+      <div style="font-size:20px;font-weight:800;color:var(--text-main);margin-bottom:6px;">创建你的龙虾Agent</div>
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:20px;">命名你的Agent，选择主要能力，开始你的注意力资产化之旅</div>
+
+      <div style="margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:8px;">Agent名称</div>
+        <input type="text" id="agent-name-input" class="form-input" placeholder="例如：我的内容分析助手" style="width:100%;">
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:8px;">选择主要能力</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${templates.map(t => `
+            <div class="agent-type-card" id="agent-type-${t.id}" onclick="selectAgentType('${t.id}', this)" style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="font-size:28px;flex-shrink:0;">${t.icon}</div>
+              <div style="flex:1;">
+                <div class="atc-title">${t.name}</div>
+                <div class="atc-desc">${t.desc}</div>
+                <div class="atc-reward">${t.reward}</div>
+              </div>
+              <div id="agent-type-check-${t.id}" style="width:20px;height:20px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="padding:14px;background:rgba(241,143,1,0.06);border-radius:10px;border:1px solid rgba(241,143,1,0.2);">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px;">⚠️ 创建须知</div>
+        <div style="font-size:12px;color:var(--text-sub);line-height:1.7;">
+          • Agent创建后可随时暂停，不会有任何费用<br>
+          • Agent操作受智能合约约束，不会超出授权范围<br>
+          • 所有数据处理基于联邦学习，保护你的隐私<br>
+          • 积分收益实时到账，可在积分明细查看
+        </div>
+      </div>
+    </div>
+  `;
+
+  const bottomBar = document.getElementById('agent-create-bar');
+  if (bottomBar) {
+    bottomBar.innerHTML = `
+      <button class="bab-btn ghost" onclick="goBack()">取消</button>
+      <button class="bab-btn accent" onclick="doCreateAgent()">创建Agent</button>
+    `;
+  }
+};
+
+let selectedAgentType = null;
+
+function selectAgentType(typeId, el) {
+  selectedAgentType = typeId;
+  document.querySelectorAll('.agent-type-card').forEach(c => {
+    c.classList.remove('active');
+    const check = c.querySelector('[id^="agent-type-check-"]');
+    if (check) { check.innerHTML = ''; check.style.border = '2px solid rgba(0,0,0,0.15)'; check.style.background = 'transparent'; }
+  });
+  if (el) {
+    el.classList.add('active');
+    const check = el.querySelector(`#agent-type-check-${typeId}`);
+    if (check) { check.innerHTML = '✓'; check.style.background = 'var(--accent)'; check.style.border = '2px solid var(--accent)'; check.style.color = '#fff'; check.style.fontSize = '12px'; }
+  }
+}
+
+function doCreateAgent() {
+  const nameInput = document.getElementById('agent-name-input');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) { showToast('请输入Agent名称'); return; }
+  if (!selectedAgentType) { showToast('请选择Agent能力类型'); return; }
+  Store.update('user', u => ({ ...u, agentCreated: true, agentName: name, agentType: selectedAgentType }));
+  showToast(`🦞 「${name}」创建成功！`);
+  setTimeout(() => navigate('page-agent'), 1500);
+}
+
+// ========== Agent市场 ==========
+window.render_page_agent_market = function() {
+  const el = document.getElementById('agent-market-content');
+  if (!el) return;
+
+  const marketAgents = [
+    { name: '产业研报分析师', icon: '📊', creator: '合力生态官方', desc: '专门分析上市公司研报，生成深度评论', usage: 8924, reward: '+200 EXP/篇', certified: true },
+    { name: '综艺互动王', icon: '🎬', creator: '超级用户_Nebula', desc: '全自动追踪《智造者》更新，互动抢先机', usage: 5632, reward: '+100 EXP/集', certified: false },
+    { name: '指数追踪者', icon: '📈', creator: '量化策略组', desc: '实时监控合力指数变化，第一时间推送', usage: 3291, reward: '+50 EXP/推送', certified: true },
+    { name: '市值叙事家', icon: '✍️', creator: '合力创作者联盟', desc: '帮助企业撰写人性温度故事，获取MP', usage: 1847, reward: '+150 MP/篇', certified: true }
+  ];
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1A0A0A,#4A1010);padding:28px 16px 20px;">
+      <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;">🦞 Agent市场</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.55);">发现并订阅优质Agent，加速你的积分积累</div>
+    </div>
+    <div style="padding:16px 0;">
+      ${marketAgents.map(a => `
+        <div style="margin:0 16px 12px;background:#fff;border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);cursor:pointer;" onclick="showToast('即将接入该Agent的授权流程')">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="font-size:32px;">${a.icon}</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="font-size:15px;font-weight:700;color:var(--text-main);">${a.name}</div>
+                ${a.certified ? '<span class="badge badge-primary" style="font-size:10px;">✓ 认证</span>' : ''}
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);">by ${a.creator} · ${formatNumber(a.usage)}人使用</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--text-sub);margin-bottom:10px;">${a.desc}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;color:var(--success);font-weight:600;">${a.reward}</span>
+            <button style="background:var(--primary);color:#fff;border:none;padding:6px 16px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;">订阅</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+// ========== 合力智脑 ==========
+window.render_page_brain = function() {
+  renderBrainMessages();
+  renderBrainQuickBtns();
+};
+
+function renderBrainMessages() {
+  const msgs = Store.get('brainMessages');
+  const mode = currentBrainMode;
+  const el = document.getElementById('brain-chat-messages');
+  if (!el) return;
+
+  const msgList = msgs[mode] || [];
+  el.innerHTML = msgList.map(m => `
+    <div class="chat-msg ${m.role}">
+      <div class="chat-bubble">${m.text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')}</div>
+      <div class="chat-msg-time">${m.time || ''}</div>
+    </div>
+  `).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderBrainQuickBtns() {
+  const el = document.getElementById('brain-quick-btns');
+  if (!el) return;
+  const btns = currentBrainMode === 'c'
+    ? ['帮我分析积分', '查看合力指数', '龙虾Agent教程', 'Pioneer OS是什么']
+    : ['生成运营报告', '制定积分激励策略', '分析用户数据', '品牌曝光方案'];
+  el.innerHTML = btns.map(b => `<button class="chat-qbtn" onclick="sendQuickMsg('${b}')">${b}</button>`).join('');
+}
+
+function switchBrain(mode, el) {
+  currentBrainMode = mode;
+  document.querySelectorAll('#page-brain .nbt-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderBrainMessages();
+  renderBrainQuickBtns();
+}
+
+function sendQuickMsg(text) {
+  const input = document.getElementById('brain-input');
+  if (input) input.value = text;
+  sendBrainMessage();
+}
+
+async function sendBrainMessage() {
+  const input = document.getElementById('brain-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const user = Store.get('user');
+  const now = new Date();
+  const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  // 添加用户消息
+  const msgs = Store.get('brainMessages');
+  if (!msgs[currentBrainMode]) msgs[currentBrainMode] = [];
+  msgs[currentBrainMode].push({ role: 'user', text, time });
+  Store.set('brainMessages', msgs);
+  renderBrainMessages();
+
+  // 打字中动画
+  const el = document.getElementById('brain-chat-messages');
+  if (el) {
+    const typing = document.createElement('div');
+    typing.id = 'brain-typing';
+    typing.className = 'chat-msg assistant';
+    typing.innerHTML = '<div class="brain-typing"><span></span><span></span><span></span></div>';
+    el.appendChild(typing);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  const res = await API.brainChat(currentBrainMode, text);
+
+  // 移除打字动画
+  const typingEl = document.getElementById('brain-typing');
+  if (typingEl) typingEl.remove();
+
+  // 添加回复
+  const msgs2 = Store.get('brainMessages');
+  msgs2[currentBrainMode].push({ role: 'assistant', text: res.reply, time });
+  Store.set('brainMessages', msgs2);
+  renderBrainMessages();
+}
+
+// ========== 竞猜交互 ==========
+async function selectQuizOption(showId, quizId, optionIdx) {
+  const opts = document.querySelectorAll('.quiz-option');
+  opts.forEach(o => o.style.pointerEvents = 'none');
+
+  const selected = document.getElementById(`qopt-${optionIdx}`);
+  if (selected) selected.style.background = 'rgba(30,58,95,0.08)';
+
+  const res = await API.submitQuiz(showId, quizId, optionIdx);
+
+  opts.forEach((o, i) => {
+    if (i === res.correctOption) {
+      o.style.background = 'rgba(56,161,105,0.12)';
+      o.style.borderColor = 'var(--success)';
+      o.style.color = 'var(--success)';
+    } else if (i === optionIdx && !res.correct) {
+      o.style.background = 'rgba(229,62,62,0.08)';
+      o.style.borderColor = 'var(--danger)';
+      o.style.color = 'var(--danger)';
+    }
+  });
+
+  setTimeout(() => {
+    showToast(res.msg);
+    if (res.correct) {
+      showModal(`<div class="modal-handle"></div>
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+          <div style="font-size:18px;font-weight:800;color:var(--success);margin-bottom:6px;">答对了！</div>
+          <div style="font-size:14px;color:var(--text-sub);">获得 +${res.points} EXP积分</div>
+          <button onclick="closeModal()" style="margin-top:20px;background:var(--accent);color:#fff;border:none;padding:12px 32px;border-radius:20px;font-size:15px;font-weight:700;cursor:pointer;">太棒了</button>
+        </div>`);
+    }
+  }, 500);
+}
+
+// ========== 签到 ==========
+async function doCheckin() {
+  const res = await API.checkin();
+  showToast(res.msg);
+  if (res.success) render_page_mine();
+}
+
+// ========== 评论 ==========
+async function submitShowComment(showId) {
+  const input = document.getElementById('comment-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) { showToast('请输入评论内容'); return; }
+  const res = await API.submitComment(showId, text);
+  showToast(res.msg);
+  input.value = '';
+  navigate('page-show-detail', { id: showId });
+}
+
+// ========== 播放剧集 ==========
+let playInterval = null;
+
+async function playEpisode(showId, epId) {
+  const btn = document.getElementById('play-btn');
+  if (btn) btn.innerHTML = '⏸';
+  if (playInterval) clearInterval(playInterval);
+
+  let progress = 0;
+  const progressBar = document.getElementById('play-progress-bar');
+
+  playInterval = setInterval(() => {
+    progress += 2;
+    if (progressBar) progressBar.style.width = Math.min(progress, 100) + '%';
+    if (progress >= 100) {
+      clearInterval(playInterval);
+      API.watchEpisode(showId, epId).then(res => {
+        if (res.success) {
+          showToast(res.msg);
+          const btn2 = document.getElementById('play-btn');
+          if (btn2) btn2.innerHTML = '▶';
+        }
+      });
+    }
+  }, 200);
+}
+
+// ========== 订单 ==========
+async function doCreateOrder(productId) {
+  const res = await API.createOrder(productId, 1);
+  if (res.success) {
+    showToast(res.msg);
+    setTimeout(() => navigate('page-order-list'), 1200);
+  } else {
+    showToast(res.msg || '兑换失败');
+  }
+}
+
+// ========== 荣誉 ==========
+async function claimHonorAction(honorId) {
+  const res = await API.claimHonor(honorId);
+  showToast(res.msg);
+  if (res.success) render_page_honor_list();
+}
+
+function showHonorDetail(honorId) {
+  const honors = Store.get('honors');
+  const honor = honors.find(h => h.id === honorId);
+  if (!honor) return;
+  showModal(`
+    <div class="modal-handle"></div>
+    <div style="text-align:center;padding:10px 0 20px;">
+      <div style="font-size:56px;margin-bottom:12px;">${honor.icon}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:6px;">${honor.title}</div>
+      <div style="font-size:14px;color:var(--text-sub);margin-bottom:16px;">${honor.desc}</div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;margin-bottom:16px;text-align:left;">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">兑换条件</div>
+        <div style="font-size:14px;color:var(--text-main);">${honor.req}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;margin-bottom:4px;">兑换消耗</div>
+        <div style="font-size:16px;font-weight:800;color:var(--accent);">${honor.cost} ${honor.costType}</div>
+      </div>
+      ${honor.claimed ? 
+        '<div style="color:var(--success);font-weight:600;">✅ 已兑换</div>' :
+        `<button onclick="claimHonorAction('${honor.id}');closeModal();" style="width:100%;background:var(--accent);color:#fff;border:none;padding:12px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">立即兑换</button>`
+      }
+    </div>
+  `);
+}
+
+// ========== 积分兑换弹窗 ==========
+function openExchangeModal(type) {
+  const user = Store.get('user');
+  const rates = { watch: { rate: 0.2, name: 'WATCH', color: '#3182CE' }, exp: { rate: 0.5, name: 'EXP', color: '#805AD5' }, gov: { rate: 1.2, name: 'GOV', color: '#2F855A' }, data: { rate: 0.8, name: 'DATA', color: '#2B6CB0' }, mp: { rate: 1.5, name: 'MP', color: '#D69E2E' } };
+  const info = rates[type];
+  if (!info) return;
+  const balance = user[type] || 0;
+
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">${info.name} → HP 兑换</div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:14px;color:var(--text-muted);">当前余额：${formatNumber(balance)} ${info.name}</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">兑换汇率：100 ${info.name} = ${info.rate * 100} HP</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">兑换数量</div>
+      <input type="number" id="exchange-amount" class="form-input" placeholder="输入${info.name}数量" value="100" style="width:100%;">
+    </div>
+    <div id="exchange-preview" style="padding:12px;background:var(--bg);border-radius:10px;text-align:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:700;color:${info.color};">100 ${info.name}</span>
+      <span style="font-size:14px;color:var(--text-muted);"> → </span>
+      <span style="font-size:16px;font-weight:700;color:var(--hp-color);">${info.rate * 100} HP</span>
+    </div>
+    <button onclick="doExchange('${type}')" style="width:100%;background:var(--primary);color:#fff;border:none;padding:12px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">确认兑换</button>
+  `);
+
+  const amountInput = document.getElementById('exchange-amount');
+  const preview = document.getElementById('exchange-preview');
+  if (amountInput && preview) {
+    amountInput.addEventListener('input', () => {
+      const amt = parseInt(amountInput.value) || 0;
+      const hp = Math.floor(amt * info.rate);
+      preview.innerHTML = `<span style="font-size:16px;font-weight:700;color:${info.color};">${formatNumber(amt)} ${info.name}</span><span style="font-size:14px;color:var(--text-muted);"> → </span><span style="font-size:16px;font-weight:700;color:var(--hp-color);">${formatNumber(hp)} HP</span>`;
+    });
+  }
+}
+
+async function doExchange(type) {
+  const amountInput = document.getElementById('exchange-amount');
+  const amount = parseInt(amountInput ? amountInput.value : 0);
+  if (!amount || amount <= 0) { showToast('请输入有效数量'); return; }
+  closeModal();
+  const res = await API.exchangePoints(type, amount);
+  showToast(res.msg);
+  if (res.success) navigate('page-points-detail');
+}
+
+// ========== 写作助手弹窗 ==========
+function openWriterTemplate(title) {
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">✍️ ${title}</div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">AI将辅助你创作，生成后经人工审核即可发布获得积分</div>
+      ${title.includes('上市公司') ? `
+        <div style="margin-bottom:10px;">
+          <select class="form-input" style="width:100%;">
+            ${Store.get('companies').map(c => `<option>${c.name}（${c.code}）</option>`).join('')}
+          </select>
+        </div>
+      ` : ''}
+      <textarea id="writer-input" style="width:100%;min-height:100px;border:1.5px solid rgba(0,0,0,0.12);border-radius:10px;padding:12px;font-size:14px;outline:none;resize:vertical;" placeholder="输入你的初步想法或角度，AI将帮你扩展成完整分析..."></textarea>
+    </div>
+    <button onclick="generateAIContent()" style="width:100%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;padding:12px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🤖 AI辅助生成</button>
+  `);
+}
+
+async function generateAIContent() {
+  closeModal();
+  showToast('🤖 AI正在生成内容...');
+  await sleep(2000);
+  showToast('✅ 内容已生成！发布后获得积分');
+  Store.update('user', u => ({ ...u, exp: u.exp + 200, willpower: u.willpower + 300 }));
+}
+
+// ========== 商家登录 ==========
+async function doMerchantLogin() {
+  const email = document.getElementById('merchant-email').value;
+  const pwd = document.getElementById('merchant-pwd').value;
+  showToast('登录中...');
+  const res = await API.merchantLogin(email, pwd);
+  if (res.success) {
+    showToast('✅ 登录成功');
+    setTimeout(() => navigate('page-merchant-dashboard'), 800);
+  } else {
+    showToast(res.msg);
+  }
+}
+
+// ========== Pioneer模式 ==========
+function setPioneerMode(mode, el) {
+  Store.update('pioneerMode', () => mode);
+  document.querySelectorAll('.ph-mode').forEach(m => m.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderPioneerContent(mode);
+}
+
+// ========== 阅读奖励 ==========
+async function claimReadReward(companyId) {
+  Store.update('user', u => ({ ...u, exp: u.exp + 50, willpower: u.willpower + 80 }));
+  showToast('+50 EXP积分 +80 贡献值');
+}
+
+// ========== 工具函数 ==========
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function showModal(content) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('overlay');
+  const modalContent = document.getElementById('modal-content');
+  if (!modal || !overlay || !modalContent) return;
+  modalContent.innerHTML = content;
+  modal.classList.add('show');
+  overlay.classList.add('show');
+}
+
+function closeModal() {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('overlay');
+  if (modal) modal.classList.remove('show');
+  if (overlay) overlay.classList.remove('show');
+}
+
+function closeOverlay() {
+  closeModal();
+}
+
+/* =============================================
+   app-part3.js - 初始化 + 启动逻辑
+   合力生态 HarmonyLink v2.0
+   ============================================= */
+
+// ========== 应用初始化 ==========
+document.addEventListener('DOMContentLoaded', () => {
+  Store.init();
+  initApp();
+});
+
+async function initApp() {
+  // 显示启动屏
+  const splash = document.getElementById('page-splash');
+  if (splash) splash.classList.add('active');
+
+  // 初始化动画
+  await sleep(2200);
+
+  // 隐藏启动屏，进入首页
+  if (splash) splash.classList.remove('active');
+  navigate('page-home');
+}
+
+// ========== 全局键盘事件 ==========
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ========== 触摸手势 ==========
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.getElementById('app').addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.getElementById('app').addEventListener('touchend', (e) => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+  if (dx > 80 && dy < 60 && pageStack.length > 1) {
+    goBack();
+  }
+}, { passive: true });
+
+/* =============================================
+   app-pioneer.js - Pioneer OS 子站逻辑
+   上市公司垂直产业叙事基础设施
+   ============================================= */
+
+// ========== Pioneer OS 主页面渲染 ==========
+window.render_page_pioneer_hub = function() {
+  const mode = Store.get('pioneerMode') || 'c';
+  renderPioneerContent(mode);
+};
+
+function renderPioneerContent(mode) {
+  const el = document.getElementById('pioneer-main-content');
+  if (!el) return;
+
+  if (mode === 'c') renderPioneerC(el);
+  else if (mode === 'b') renderPioneerB(el);
+  else if (mode === 'gov') renderPioneerGov(el);
+}
+
+// ========== C端个人版 ==========
+function renderPioneerC(el) {
+  const companies = Store.get('companies');
+  el.innerHTML = `
+    <div class="pioneer-hero">
+      <div class="ph-hero-title">发现被市场忽视的<br>产业温度信号</div>
+      <div class="ph-hero-sub">Pioneer OS是上市公司垂直产业叙事的基础设施，帮你挖掘财报背后的人性价值，比市场早3-6个月发现真实企业温度。</div>
+    </div>
+
+    <!-- 内容中心 -->
+    <div class="pioneer-module">
+      <div class="pm-title">📡 实时信号流</div>
+      <div id="pioneer-signal-feed" style="display:flex;flex-direction:column;gap:8px;">
+        ${generateSignalFeed()}
+      </div>
+    </div>
+
+    <!-- 热门叙事 -->
+    <div class="pioneer-module">
+      <div class="pm-title">🔥 热门产业叙事</div>
+      ${companies.slice(0, 4).map(c => `
+        <div class="pioneer-card" onclick="navigate('page-pioneer-narrative', {companyId:'${c.id}', mode:'c'})">
+          <div class="pc-head">
+            <div class="pc-icon" style="font-size:20px;font-weight:900;color:var(--pioneer-light);">${c.name[0]}</div>
+            <div class="pc-title">${c.name}</div>
+            <div class="pc-badge">${c.sector}</div>
+          </div>
+          <div class="pc-desc">${c.desc}</div>
+          <div class="pc-stats">
+            <div class="pc-stat"><div class="pc-stat-num">${c.index}</div><div class="pc-stat-label">合力指数</div></div>
+            <div class="pc-stat"><div class="pc-stat-num">${c.mp}</div><div class="pc-stat-label">MP温度</div></div>
+            <div class="pc-stat"><div class="pc-stat-num">${c.stories.length}</div><div class="pc-stat-label">叙事章节</div></div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- 个人积分 -->
+    <div class="pioneer-module">
+      <div class="pm-title">💎 我的叙事贡献</div>
+      <div class="pioneer-card" onclick="navigate('page-mp-explain')">
+        <div class="pc-head">
+          <div class="pc-icon">💎</div>
+          <div class="pc-title">MP意义积分余额</div>
+        </div>
+        <div style="font-size:36px;font-weight:900;color:var(--pioneer-light);margin:8px 0;">${formatNumber(Store.get('user').mp)}</div>
+        <div class="pc-desc">通过阅读叙事、发表评论、贡献故事获取MP积分。MP积分是合力指数MP维度的核心数据来源。</div>
+        <div style="margin-top:10px;">
+          <button onclick="navigate('page-ai-writer');event.stopPropagation();" style="background:rgba(108,99,255,0.2);border:1px solid rgba(108,99,255,0.4);color:var(--pioneer-light);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">✍️ 写叙事得MP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 算力积分说明 -->
+    <div class="pioneer-module">
+      <div class="pm-title">⚡ 算力积分 TC</div>
+      <div class="pioneer-card">
+        <div class="pc-head">
+          <div class="pc-icon">⚡</div>
+          <div class="pc-title">训力券 (TC)</div>
+          <div class="pc-badge" style="background:rgba(56,161,105,0.2);color:#68D391;">1 TC = ¥1算力</div>
+        </div>
+        <div class="pc-desc">Pioneer OS独有的算力积分体系。通过内容消费和知识贡献获取TC训力券，直接抵扣算力使用费用。</div>
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="pc-stat-num">¥128万</div><div class="pc-stat-label">本月核销</div></div>
+          <div class="pc-stat"><div class="pc-stat-num">2,847</div><div class="pc-stat-label">活跃用户</div></div>
+          <div class="pc-stat"><div class="pc-stat-num">142万</div><div class="pc-stat-label">API调用</div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========== B端企业版 ==========
+function renderPioneerB(el) {
+  const companies = Store.get('companies');
+  el.innerHTML = `
+    <div class="pioneer-hero">
+      <div class="ph-hero-title">构建你的企业<br>产业叙事基础设施</div>
+      <div class="ph-hero-sub">Pioneer OS帮助上市公司将品牌故事转化为可量化的产业温度数据，重新激活A股价值叙事，构建新型市值管理框架。</div>
+    </div>
+
+    <!-- 月度看板 -->
+    <div class="pioneer-module">
+      <div class="pm-title">📊 月度运营看板</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${[
+          { icon: '👁', num: '18,924', label: '品牌触达', change: '+24%' },
+          { icon: '❤️', num: '8.4', label: 'MP温度指数', change: '+1.2' },
+          { icon: '🔗', num: '142万', label: 'API调用', change: '+35%' },
+          { icon: '💰', num: '¥32万', label: '算力补贴核销', change: '+18%' }
+        ].map(item => `
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;">
+            <div style="font-size:22px;margin-bottom:6px;">${item.icon}</div>
+            <div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${item.num}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);">${item.label}</div>
+            <div style="font-size:11px;color:#68D391;margin-top:2px;">↑ ${item.change}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 叙事章节管理 -->
+    <div class="pioneer-module">
+      <div class="pm-title">📝 叙事章节管理</div>
+      ${companies.slice(0, 3).map(c => `
+        <div class="pioneer-card" onclick="navigate('page-pioneer-narrative', {companyId:'${c.id}', mode:'b'})">
+          <div class="pc-head">
+            <div style="width:32px;height:32px;background:rgba(108,99,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--pioneer-light);">${c.name[0]}</div>
+            <div class="pc-title">${c.name}</div>
+            <div class="pc-badge">${c.stories.length} 章节</div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:8px;">
+            ${[['触达', c.attention * 18 + '万'], ['MP分', c.mp], ['热度', c.heat]].map(([l,v]) => `
+              <div><div style="font-size:14px;font-weight:700;color:var(--pioneer-light);">${v}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">${l}</div></div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+      <div class="pioneer-card" style="border-style:dashed;cursor:pointer;text-align:center;" onclick="showToast('企业入驻申请已提交，我们将在24小时内联系您')">
+        <div style="font-size:24px;margin-bottom:8px;">+</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.5);">申请入驻 Pioneer OS</div>
+      </div>
+    </div>
+
+    <!-- 转化漏斗 -->
+    <div class="pioneer-module">
+      <div class="pm-title">🎯 注意力转化漏斗</div>
+      <div class="pioneer-card">
+        ${[['内容曝光', 100, '18,924'], ['叙事触达', 62, '11,733'], ['深度阅读', 35, '6,623'], ['积分互动', 18, '3,406'], ['商城转化', 7, '1,325']].map(([label, pct, num]) => `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:rgba(255,255,255,0.55);">${label}</span>
+              <span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:600;">${num} (${pct}%)</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--pioneer),var(--pioneer-light));border-radius:3px;transition:width 1s ease;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ========== 政务版 ==========
+function renderPioneerGov(el) {
+  el.innerHTML = `
+    <div class="pioneer-hero">
+      <div class="ph-hero-title">算力政策落地<br>可量化可溯源</div>
+      <div class="ph-hero-sub">Pioneer OS为政府监管提供可信数据底座，将算力补贴从"14天核销"压缩至"3天自动完成"，自动化率92%。</div>
+    </div>
+
+    <!-- 政策核心指标 -->
+    <div class="pioneer-module">
+      <div class="pm-title">📋 政策落地核心指标</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${[
+          { icon: '⚡', num: '¥128万', label: '训力券核销金额', change: '本月' },
+          { icon: '🏢', num: '68家', label: '受益企业数量', change: '累计' },
+          { icon: '👥', num: '2,847', label: '平台活跃用户', change: '月活' },
+          { icon: '🔗', num: '142万', label: 'API调用次数', change: '本月' }
+        ].map(item => `
+          <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;">
+            <div style="font-size:22px;margin-bottom:6px;">${item.icon}</div>
+            <div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${item.num}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);">${item.label}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:2px;">${item.change}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 飞轮政策逻辑 -->
+    <div class="pioneer-module">
+      <div class="pm-title">🔄 政策受益飞轮路径</div>
+      <div class="pioneer-card">
+        ${[
+          { step: '①', title: 'C端用户内容消费', desc: '观看纪录片、发表研报评论，产生真实的平台使用行为' },
+          { step: '②', title: 'API调用上链存证', desc: '每次行为触发API调用，数据上链（长安链），不可篡改' },
+          { step: '③', title: '算力消耗核算', desc: '智能合约自动核算算力消耗，形成标准化核销凭证' },
+          { step: '④', title: '政府自动核销', desc: '核销时间从14天→3天，自动化率92%，防欺诈机制内置' },
+          { step: '⑤', title: '补贴回流企业', desc: '算力补贴精准到达受益企业，生态形成可持续正向飞轮' }
+        ].map(item => `
+          <div style="display:flex;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06);last-child:border-0;">
+            <div style="width:24px;height:24px;background:var(--pioneer);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;margin-top:2px;">${item.step}</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">${item.title}</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.5;">${item.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 技术合规说明 -->
+    <div class="pioneer-module">
+      <div class="pm-title">🔒 技术合规架构</div>
+      ${[
+        { icon: '⛓️', title: '区块链存证', sub: '基于长安链/BSN', desc: '每次API调用上链，核销凭证不可篡改，政府核查零成本' },
+        { icon: '⚡', title: '智能合约自动化', sub: '自动化率92%', desc: '算力消耗达标→自动触发核销申请→自动通知受益企业' },
+        { icon: '🔐', title: '隐私计算', sub: '联邦学习+TEE', desc: '企业数据"可用不可见"，平衡监管透明与商业隐私保护' }
+      ].map(item => `
+        <div class="pioneer-card" style="margin-bottom:8px;">
+          <div class="pc-head">
+            <div class="pc-icon">${item.icon}</div>
+            <div>
+              <div class="pc-title">${item.title}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.35);">${item.sub}</div>
+            </div>
+          </div>
+          <div class="pc-desc">${item.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- 数交所备案 -->
+    <div class="pioneer-module">
+      <div class="pioneer-card" style="background:rgba(56,161,105,0.08);border-color:rgba(56,161,105,0.25);">
+        <div style="font-size:13px;color:#68D391;font-weight:700;margin-bottom:8px;">✓ 数交所备案状态</div>
+        <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">合规认证中</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);">Pioneer OS已向数据交易所提交备案申请，预计2026Q3完成全部合规认证流程，法务团队全程跟进。</div>
+      </div>
+    </div>
+  `;
+}
+
+// ========== 产业叙事详情 ==========
+window.render_page_pioneer_narrative = function(data) {
+  const companies = Store.get('companies');
+  const company = data && data.companyId ? companies.find(c => c.id === data.companyId) : companies[0];
+  if (!company) return;
+
+  const titleEl = document.getElementById('pioneer-narrative-title');
+  if (titleEl) titleEl.textContent = company.name + ' · 产业叙事';
+
+  const el = document.getElementById('pioneer-narrative-content');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0A1628,#1A0A3D);padding:24px 16px;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:6px;">Pioneer OS · 产业叙事档案</div>
+      <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px;">${company.name}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.5);">${company.sector} · ${company.code}</div>
+      <div style="display:flex;gap:12px;margin-top:14px;">
+        <div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${company.index}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">合力指数</div></div>
+        <div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${company.mp}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">MP人性温度</div></div>
+        <div style="text-align:center;flex:1;"><div style="font-size:20px;font-weight:800;color:var(--pioneer-light);">${company.stories.length * 4}</div><div style="font-size:10px;color:rgba(255,255,255,0.35);">叙事条目</div></div>
+      </div>
+    </div>
+
+    <div style="padding:16px 0;">
+      ${company.stories.map((story, idx) => `
+        <div style="margin:0 16px 12px;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);">
+          <div style="padding:16px;cursor:pointer;" onclick="navigate('page-brand-story', {id:'${company.id}', story:'${story}'})">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--pioneer),var(--pioneer-light));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">${idx+1}</div>
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:4px;">${story}</div>
+                <div style="font-size:12px;color:var(--text-muted);">Pioneer OS · 叙事章节 · 区块链存证</div>
+              </div>
+              <div style="font-size:14px;color:var(--text-muted);">›</div>
+            </div>
+          </div>
+          <div style="padding:0 16px 14px;">
+            <div style="font-size:13px;color:var(--text-sub);line-height:1.6;">${generateNarrativePreview(company.name, story)}</div>
+            <div style="margin-top:10px;display:flex;gap:8px;">
+              <span class="badge badge-primary">阅读得+50 EXP</span>
+              <span class="badge" style="background:rgba(108,99,255,0.1);color:var(--pioneer);">Pioneer存证</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+
+      <div style="margin:16px;padding:16px;background:linear-gradient(135deg,#1A0A3D,#2D1B69);border-radius:var(--radius);">
+        <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;">🔗 区块链数据总览</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7;">
+          总叙事条目：${company.stories.length * 4} 条<br>
+          最近更新：${formatDate()}<br>
+          区块链：长安链 (ChangAn Chain) · ${company.code.includes('HK') ? 'BSN香港节点' : 'BSN主网节点'}<br>
+          状态：<span style="color:#68D391;">✓ 全部存证完成</span>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+function generateNarrativePreview(companyName, story) {
+  return `${companyName}在${story}方面的进展，不仅体现了企业的技术实力，更展示了其在AI时代重新定义人机关系的价值观。这段叙事被Pioneer OS完整记录，成为合力指数MP维度的重要数据来源...`;
+}
+
+// ========== 实时信号流生成 ==========
+function generateSignalFeed() {
+  const companies = Store.get('companies');
+  const signals = [
+    { time: '1分钟前', emoji: '📊', text: `${companies[0].name}合力指数今日涨幅+3.2，注意力热度持续攀升` },
+    { time: '5分钟前', emoji: '✍️', text: `用户「${Store.get('user').nickname}」为${companies[1].name}贡献叙事章节，获+50 EXP` },
+    { time: '12分钟前', emoji: '🔗', text: `${companies[2].name}「麒麟电池」叙事章节完成区块链存证` },
+    { time: '23分钟前', emoji: '⚡', text: `本月训力券核销达¥128万，同比增长47%` },
+    { time: '1小时前', emoji: '🏆', text: `${companies[4].name}日日新3.5 发布，MP指数单日+4.7` }
+  ];
+
+  return signals.map(s => `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;">
+      <div style="font-size:18px;flex-shrink:0;">${s.emoji}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.5;">${s.text}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px;">${s.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* =============================================
+   data.js - Mock数据层 + Store + API
+   合力生态 HarmonyLink v2.0
+   ============================================= */
+
+// ========== MOCK DATA ==========
+const MOCK_DATA = {
+  user: {
+    id: 'hl_001',
+    nickname: '先行者Nebula',
+    avatar: '🦁',
+    hp: 12800,
+    exp: 3200,
+    watch: 5600,
+    gov: 800,
+    data: 1200,
+    mp: 2400,
+    willpower: 72400,
+    willpowerMonthly: 8600,
+    rank: 128,
+    level: 5,
+    levelName: 'Lv.5 先锋使者',
+    honorsClaimed: [],
+    orders: [],
+    checkinToday: false,
+    agentCreated: false,
+    agentName: '',
+    agentType: ''
+  },
+
+  levels: [
+    { level: 1, name: '觉醒者', minWP: 0, maxWP: 5000, benefits: ['基础积分兑换', '参与投票'] },
+    { level: 2, name: '探索者', minWP: 5000, maxWP: 15000, benefits: ['EXP积分解锁', '研报评论权'] },
+    { level: 3, name: '先行者', minWP: 15000, maxWP: 35000, benefits: ['GOV积分解锁', '社区治理票'] },
+    { level: 4, name: '建设者', minWP: 35000, maxWP: 70000, benefits: ['DATA积分解锁', '数据上链'] },
+    { level: 5, name: '先锋使者', minWP: 70000, maxWP: 150000, benefits: ['MP积分解锁', '龙虾Agent'] },
+    { level: 6, name: '意义创造者', minWP: 150000, maxWP: 999999, benefits: ['全部权益', 'DAO治理权'] }
+  ],
+
+  pointsPool: {
+    totalHP: 50000000,
+    circulatingHP: 32000000,
+    destroyedHP: 8000000,
+    sponsorReserve: 10000000
+  },
+
+  shows: [
+    {
+      id: 'zhizaozhe',
+      type: 'season1',
+      title: '《智造者》第一季',
+      subtitle: '新质生产力上市公司探秘之旅',
+      emoji: '🏭',
+      status: 'upcoming',
+      badge: 'Q3开机',
+      episodes: 12,
+      watchedEps: 0,
+      sponsor: '比亚迪、中芯国际、华为等',
+      desc: '首个聚焦新质生产力的S级综艺节目。流量艺人深入灯塔工厂，探索中国制造的智慧升级。每集完播奖励WATCH积分，限量发行企业联名徽章。',
+      tags: ['灯塔工厂', '新质生产力', '流量艺人', 'S级制作'],
+      reward_per_ep: 100,
+      total_reward: 1200,
+      episodes_data: [
+        { id: 'e1', num: 1, title: '比亚迪：智能座舱革命', duration: '48分钟', watched: false, reward: 100, desc: '深入比亚迪仰望超级工厂，探秘智能座舱的AI进化' },
+        { id: 'e2', num: 2, title: '中芯国际：芯片之战', duration: '52分钟', watched: false, reward: 100, desc: '揭秘中国芯片制造最前线，7nm工艺背后的故事' },
+        { id: 'e3', num: 3, title: '华为：AI算力帝国', duration: '45分钟', watched: false, reward: 100, desc: '华为昇腾算力中心开放参观，AI时代的算力基础设施' },
+        { id: 'e4', num: 4, title: '宁德时代：储能新世界', duration: '50分钟', watched: false, reward: 100, desc: '全球最大动力电池工厂，储能革命正在发生' },
+        { id: 'e5', num: 5, title: '商汤科技：感知未来', duration: '44分钟', watched: false, reward: 100, desc: '计算机视觉领域的AI先锋，感知技术重塑世界' },
+        { id: 'e6', num: 6, title: '海康威视：智慧眼', duration: '47分钟', watched: false, reward: 100, desc: '全球领先的视频技术企业，AI安防如何守护城市' },
+        { id: 'e7', num: 7, title: '科大讯飞：语音的力量', duration: '46分钟', watched: false, reward: 100, desc: '语音AI的中国力量，讯飞如何让机器听懂中文' },
+        { id: 'e8', num: 8, title: '三一重工：重工智能化', duration: '53分钟', watched: false, reward: 100, desc: '全球最大工程机械企业，重工业的智能化转型' },
+        { id: 'e9', num: 9, title: '迈瑞医疗：生命守护者', duration: '48分钟', watched: false, reward: 100, desc: '中国医疗设备龙头，AI如何帮助医生救死扶伤' },
+        { id: 'e10', num: 10, title: '隆基绿能：光伏新纪元', duration: '50分钟', watched: false, reward: 100, desc: '全球最大光伏企业，新能源如何重塑能源格局' },
+        { id: 'e11', num: 11, title: '中国移动：5G覆盖', duration: '44分钟', watched: false, reward: 100, desc: '5G网络背后的建设者，数字中国的通信基础' },
+        { id: 'e12', num: 12, title: '综合：新质生产力的未来', duration: '60分钟', watched: false, reward: 200, desc: '年度总结特辑，12家企业的智造故事与未来展望' }
+      ],
+      quizzes: [
+        { id: 'q1', epId: 'e1', question: '比亚迪仰望U8采用了哪项核心技术实现原地转向？', options: ['四轮独立电驱', '液压转向系统', '传统转向助力', '线控转向'], answer: 0, points: 50 },
+        { id: 'q2', epId: 'e2', question: '中芯国际目前最先进制程节点是？', options: ['28nm', '14nm', '7nm', '5nm'], answer: 2, points: 50 },
+        { id: 'q3', epId: 'e3', question: '华为昇腾910B的算力相当于多少张NVIDIA A100？', options: ['1张', '0.5张', '1.5-2张', '3张'], answer: 2, points: 80 }
+      ],
+      comments: [
+        { id: 'c1', user: '科技观察家', avatar: '🔬', text: '期待《智造者》开播！中国智造的故事值得被世界看见', time: '2026-05-20', likes: 234 },
+        { id: 'c2', user: '先行者王总', avatar: '👨‍💼', text: '比亚迪那集最期待，超级工厂太震撼了', time: '2026-05-21', likes: 187 },
+        { id: 'c3', user: 'AI投资人', avatar: '💼', text: '这个节目模式很创新，把上市公司和综艺结合，品牌曝光效果一定爆炸', time: '2026-05-22', likes: 156 }
+      ]
+    },
+    {
+      id: 'suanlijijilu',
+      type: 'doc',
+      title: '算力纪录片《先行者》',
+      subtitle: 'Q2先行转化，铺垫热度',
+      emoji: '⚡',
+      status: 'airing',
+      badge: '热播中',
+      episodes: 4,
+      watchedEps: 2,
+      sponsor: '华为、商汤科技',
+      desc: 'Q2推出的算力主题纪录片，每集约15分钟，讲述AI算力产业的先行者故事。完播奖励50 CP积分，引导用户进入完整的积分经济体系。',
+      tags: ['算力', '纪录片', 'AI产业', '先行转化'],
+      reward_per_ep: 50,
+      total_reward: 200,
+      episodes_data: [
+        { id: 'ed1', num: 1, title: '算力时代序章', duration: '15分钟', watched: true, reward: 50, desc: '从CPU到GPU，从云计算到AI算力，一场静悄悄的算力革命' },
+        { id: 'ed2', num: 2, title: '大模型背后的算力战争', duration: '16分钟', watched: true, reward: 50, desc: '训练一个GPT-4级模型需要多少算力？背后的商业与政治博弈' },
+        { id: 'ed3', num: 3, title: '中国算力的突围', duration: '15分钟', watched: false, reward: 50, desc: '在算力卡脖子的压力下，中国如何构建自主算力体系' },
+        { id: 'ed4', num: 4, title: '算力普惠的未来', duration: '18分钟', watched: false, reward: 50, desc: '当算力像水电一样普及，每个人都能拥有AI超能力' }
+      ],
+      quizzes: [],
+      comments: [
+        { id: 'cc1', user: '算力爱好者', avatar: '⚡', text: '前两集看完了，制作很扎实，数据翔实', time: '2026-05-10', likes: 89 }
+      ]
+    }
+  ],
+
+  companies: [
+    { id: 'byd', name: '比亚迪', code: '002594.SZ', sector: '新能源汽车', index: 92.4, change: +3.2, attention: 95, heat: 89, mp: 78, desc: '全球新能源汽车龙头，智能座舱+电动化双驱动', stories: ['智能座舱革命', '刀片电池技术突破', '全球工厂扩张'], rank: 1 },
+    { id: 'smic', name: '中芯国际', code: '688981.SH', sector: '半导体', index: 88.7, change: +1.8, attention: 91, heat: 85, mp: 82, desc: '中国最先进的集成电路晶圆代工企业', stories: ['7nm工艺突破', '国产替代加速', '扩产计划公告'], rank: 2 },
+    { id: 'catl', name: '宁德时代', code: '300750.SZ', sector: '储能', index: 86.3, change: -0.5, attention: 88, heat: 82, mp: 75, desc: '全球最大动力电池及储能电池生产商', stories: ['麒麟电池发布', '储能出海战略', '固态电池研发'], rank: 3 },
+    { id: 'hikvision', name: '海康威视', code: '002415.SZ', sector: 'AI视觉', index: 84.1, change: +2.1, attention: 85, heat: 79, mp: 73, desc: '全球视频监控龙头，AIoT智能物联网布局', stories: ['萤石云上市', 'AIoT新业务', '海外市场开拓'], rank: 4 },
+    { id: 'sensetime', name: '商汤科技', code: '0020.HK', sector: 'AI', index: 82.8, change: +4.7, attention: 87, heat: 83, mp: 88, desc: '亚洲最大AI软件公司，日日新大模型领跑', stories: ['日日新3.5发布', 'AI眼镜战略', '算力中心扩建'], rank: 5 },
+    { id: 'iflytek', name: '科大讯飞', code: '002230.SZ', sector: 'AI', index: 80.5, change: +1.2, attention: 82, heat: 77, mp: 71, desc: '中文语音AI技术引领者，教育+医疗双赛道', stories: ['讯飞星火4.0', '讯飞医疗AI', '教育大模型'], rank: 6 },
+    { id: 'longi', name: '隆基绿能', code: '601012.SH', sector: '新能源', index: 78.9, change: -1.3, attention: 78, heat: 71, mp: 69, desc: '全球最大太阳能电池制造商，BC技术领先', stories: ['HPBC电池效率', 'BC组件全球发货', '氢能战略'], rank: 7 },
+    { id: 'sanyi', name: '三一重工', code: '600031.SH', sector: '工程机械', index: 77.2, change: +0.8, attention: 76, heat: 70, mp: 66, desc: '全球工程机械Top3，电动化智能化转型', stories: ['灯塔工厂认证', '电动挖掘机', '出海东南亚'], rank: 8 }
+  ],
+
+  products: [
+    { id: 'byd-service', name: '比亚迪汽车服务券', company: '比亚迪', emoji: '🚗', category: 'service', price: 800, originalPrice: 1500, stock: 50, desc: '比亚迪任意车型保养服务券一次，含机油更换及全车检查', tags: ['热门', '限量'] },
+    { id: 'huawei-trade', name: '华为手机以旧换新券', company: '华为', emoji: '📱', category: 'service', price: 1200, originalPrice: 2000, stock: 30, desc: '华为任意手机以旧换新，额外补贴500元', tags: ['爆款'] },
+    { id: 'smic-salon', name: '中芯国际产业沙龙票', company: '中芯国际', emoji: '🎫', category: 'show', price: 300, originalPrice: 500, stock: 100, desc: '月度产业洞察沙龙，限量参会票，与芯片大佬面对面', tags: ['知识', '稀缺'] },
+    { id: 'zhizaozhe-ticket', name: '《智造者》首映票', company: '合力生态', emoji: '🎬', category: 'show', price: 200, originalPrice: 500, stock: 200, desc: '《智造者》第一集北京首映式，含礼品袋和明星见面机会', tags: ['首映', '独家'] },
+    { id: 'catl-camp', name: '宁德时代研学营名额', company: '宁德时代', emoji: '🔋', category: 'service', price: 2000, originalPrice: 4000, stock: 20, desc: '参观宁德时代工厂，学习电池技术，获颁研学证书', tags: ['高端', '教育'] },
+    { id: 'ai-credit', name: '算力使用券100元', company: '合力生态', emoji: '⚡', category: 'digital', price: 500, originalPrice: 800, stock: 500, desc: '平台算力资源使用券，可用于龙虾Agent训练和API调用', tags: ['数字权益'] },
+    { id: 'pioneer-nft', name: 'Pioneer OS先行者NFT', company: 'Pioneer OS', emoji: '🚀', category: 'digital', price: 3000, originalPrice: 5000, stock: 100, desc: '限量版Pioneer OS先行者数字藏品，持有者享受平台永久VIP权益', tags: ['NFT', '限量', '珍藏'] },
+    { id: 'sensetime-api', name: '商汤AI API体验包', company: '商汤科技', emoji: '🤖', category: 'digital', price: 800, originalPrice: 1200, stock: 300, desc: '商汤科技API接口30天体验包，含图像识别、人脸分析等接口', tags: ['API', '开发者'] }
+  ],
+
+  honors: [
+    { id: 'h1', title: '《智造者》早鸟观众', icon: '🎬', desc: '完整观看《智造者》第一季所有剧集', req: '观看12集并全部完成', cost: 5000, costType: 'willpower', claimed: false, rare: 'legendary' },
+    { id: 'h2', title: 'Pioneer先行者', icon: '🚀', desc: '访问Pioneer OS并完成首次叙事互动', req: '访问Pioneer OS子站', cost: 1000, costType: 'mp', claimed: false, rare: 'epic' },
+    { id: 'h3', title: '合力指数分析师', icon: '📊', desc: '对5家企业发表深度分析评论', req: '发表5篇分析', cost: 2000, costType: 'exp', claimed: false, rare: 'rare' },
+    { id: 'h4', title: '龙虾Agent创建者', icon: '🦞', desc: '成功创建并激活个人龙虾Agent', req: '创建Agent', cost: 3000, costType: 'willpower', claimed: false, rare: 'epic' },
+    { id: 'h5', title: '积分大师', icon: '💎', desc: '五种积分类型各达到1000以上', req: '全积分类型达标', cost: 5000, costType: 'willpower', claimed: false, rare: 'legendary' },
+    { id: 'h6', title: '飞轮贡献者', icon: '🔄', desc: '参与平台生态建设，完成飞轮各节点贡献', req: '完成5个飞轮节点任务', cost: 2500, costType: 'gov', claimed: false, rare: 'rare' }
+  ],
+
+  wpRecords: [
+    { id: 'w1', action: '观看《先行者》第2集', amount: 80, time: '2026-05-22 21:30', type: 'watch' },
+    { id: 'w2', action: '发表指数分析：比亚迪', amount: 200, time: '2026-05-22 15:00', type: 'exp' },
+    { id: 'w3', action: '社区投票：积分规则升级', amount: 150, time: '2026-05-21 18:00', type: 'gov' },
+    { id: 'w4', action: '数据贡献：上传行为数据', amount: 100, time: '2026-05-21 10:00', type: 'data' },
+    { id: 'w5', action: '意义贡献：MP积分达标', amount: 300, time: '2026-05-20 16:00', type: 'mp' },
+    { id: 'w6', action: '每日签到奖励', amount: 50, time: '2026-05-20 09:00', type: 'checkin' }
+  ],
+
+  pointsRecords: [
+    { id: 'p1', action: '观看《先行者》奖励', amount: +50, type: 'watch', cat: 'WATCH', time: '2026-05-22 21:30' },
+    { id: 'p2', action: '发表深度评论', amount: +100, type: 'exp', cat: 'EXP', time: '2026-05-22 15:00' },
+    { id: 'p3', action: '参与治理投票', amount: +80, type: 'gov', cat: 'GOV', time: '2026-05-21 18:00' },
+    { id: 'p4', action: '数据贡献确权', amount: +60, type: 'data', cat: 'DATA', time: '2026-05-21 10:00' },
+    { id: 'p5', action: 'WATCH→HP兑换', amount: -500, type: 'watch', cat: 'WATCH', time: '2026-05-20 14:00' },
+    { id: 'p6', action: 'WATCH→HP兑换', amount: +100, type: 'hp', cat: 'HP', time: '2026-05-20 14:00' },
+    { id: 'p7', action: '每日签到', amount: +20, type: 'hp', cat: 'HP', time: '2026-05-20 09:00' }
+  ],
+
+  merchant: {
+    name: '比亚迪品牌营销部',
+    email: 'byd@example.com',
+    loggedIn: false,
+    dashboard: {
+      monthRevenue: 2840000,
+      monthOrders: 1283,
+      activeUsers: 8924,
+      brandScore: 92.4,
+      conversionRate: 3.8,
+      attentionGrowth: 24.5
+    }
+  },
+
+  pioneerMode: 'c',
+
+  agentTemplates: [
+    { id: 'content', name: '内容分析Agent', icon: '📝', desc: '自动分析行业研报、上市公司公告，生成深度评论获取EXP积分', reward: '+200 EXP/篇', available: true },
+    { id: 'watch', name: '观看守护Agent', icon: '👁', desc: '自动提醒新剧集上线，智能追踪观看进度，最大化WATCH积分获取', reward: '+50 WATCH/集', available: true },
+    { id: 'gov', name: '治理参与Agent', icon: '🗳', desc: '分析社区提案，根据你的偏好自动参与投票，获取GOV积分', reward: '+100 GOV/次', available: true },
+    { id: 'data', name: '数据贡献Agent', icon: '📡', desc: '在保护隐私的前提下，将你的行为数据上链确权，获取DATA积分', reward: '+60 DATA/天', available: false }
+  ],
+
+  brainMessages: {
+    c: [
+      { role: 'assistant', text: '你好！我是合力智脑，你的专属积分管家 🤖\n\n我可以帮你：\n• 制定个性化积分增长计划\n• 分析你的积分健康度\n• 推荐适合你的内容和荣誉\n• 解答合力生态一切问题\n\n有什么我能帮到你的？', time: '09:35' }
+    ],
+    b: [
+      { role: 'assistant', text: '您好！我是合力智脑商家版 🏪\n\n我可以为您：\n• 自动生成月度运营报告\n• 分析用户行为数据\n• 制定积分激励策略\n• 优化品牌曝光路径\n\n请问您今天有什么商业需求？', time: '09:35' }
+    ]
+  }
+};
+
+// ========== Store ==========
+const Store = {
+  _data: {},
+  _listeners: [],
+
+  init() {
+    const saved = localStorage.getItem('hl_store_v2');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this._data = { ...MOCK_DATA, ...parsed };
+        // 深度合并user
+        this._data.user = { ...MOCK_DATA.user, ...parsed.user };
+      } catch(e) {
+        this._data = { ...MOCK_DATA };
+      }
+    } else {
+      this._data = { ...MOCK_DATA };
+      // 深拷贝数组
+      this._data.shows = JSON.parse(JSON.stringify(MOCK_DATA.shows));
+      this._data.products = JSON.parse(JSON.stringify(MOCK_DATA.products));
+      this._data.companies = JSON.parse(JSON.stringify(MOCK_DATA.companies));
+      this._data.honors = JSON.parse(JSON.stringify(MOCK_DATA.honors));
+      this._data.wpRecords = JSON.parse(JSON.stringify(MOCK_DATA.wpRecords));
+      this._data.pointsRecords = JSON.parse(JSON.stringify(MOCK_DATA.pointsRecords));
+      this._data.brainMessages = JSON.parse(JSON.stringify(MOCK_DATA.brainMessages));
+    }
+  },
+
+  get(key) {
+    return this._data[key];
+  },
+
+  set(key, val) {
+    this._data[key] = val;
+    this._save();
+    this._notify();
+  },
+
+  update(key, fn) {
+    this._data[key] = fn(this._data[key]);
+    this._save();
+    this._notify();
+  },
+
+  _save() {
+    try {
+      localStorage.setItem('hl_store_v2', JSON.stringify(this._data));
+    } catch(e) {}
+  },
+
+  _notify() {
+    this._listeners.forEach(fn => fn());
+  },
+
+  subscribe(fn) {
+    this._listeners.push(fn);
+  }
+};
+
+// ========== API ==========
+const API = {
+  async checkin() {
+    await sleep(400);
+    const user = Store.get('user');
+    if (user.checkinToday) return { success: false, msg: '今日已签到' };
+    const hpGain = 20 + Math.floor(Math.random() * 30);
+    const wpGain = 50;
+    Store.update('user', u => ({
+      ...u,
+      hp: u.hp + hpGain,
+      willpower: u.willpower + wpGain,
+      willpowerMonthly: u.willpowerMonthly + wpGain,
+      checkinToday: true
+    }));
+    const records = Store.get('pointsRecords');
+    records.unshift({ id: 'p_' + Date.now(), action: '每日签到', amount: +hpGain, type: 'hp', cat: 'HP', time: formatTime() });
+    Store.set('pointsRecords', records);
+    return { success: true, hp: hpGain, wp: wpGain, msg: `签到成功！+${hpGain} HP +${wpGain} 贡献值` };
+  },
+
+  async watchEpisode(showId, epId) {
+    await sleep(600);
+    const shows = Store.get('shows');
+    const show = shows.find(s => s.id === showId);
+    if (!show) return { success: false };
+    const ep = show.episodes_data.find(e => e.id === epId);
+    if (!ep || ep.watched) return { success: false, msg: '已领取过奖励' };
+    ep.watched = true;
+    show.watchedEps = show.episodes_data.filter(e => e.watched).length;
+    Store.set('shows', shows);
+    Store.update('user', u => ({
+      ...u,
+      watch: u.watch + ep.reward,
+      willpower: u.willpower + Math.floor(ep.reward * 0.8),
+      willpowerMonthly: u.willpowerMonthly + Math.floor(ep.reward * 0.8)
+    }));
+    return { success: true, reward: ep.reward, msg: `观看完成！+${ep.reward} WATCH积分` };
+  },
+
+  async submitComment(showId, text) {
+    await sleep(500);
+    const shows = Store.get('shows');
+    const show = shows.find(s => s.id === showId);
+    if (!show) return { success: false };
+    const user = Store.get('user');
+    show.comments.unshift({ id: 'c_' + Date.now(), user: user.nickname, avatar: user.avatar, text, time: formatDate(), likes: 0 });
+    Store.set('shows', shows);
+    Store.update('user', u => ({ ...u, exp: u.exp + 30, willpower: u.willpower + 50 }));
+    return { success: true, msg: '+30 EXP积分' };
+  },
+
+  async submitQuiz(showId, quizId, optionIdx) {
+    await sleep(600);
+    const shows = Store.get('shows');
+    const show = shows.find(s => s.id === showId);
+    if (!show) return { success: false };
+    const quiz = show.quizzes.find(q => q.id === quizId);
+    if (!quiz) return { success: false };
+    const correct = optionIdx === quiz.answer;
+    if (correct) {
+      Store.update('user', u => ({ ...u, exp: u.exp + quiz.points, willpower: u.willpower + 100 }));
+    }
+    return { success: true, correct, points: correct ? quiz.points : 0, correctOption: quiz.answer, msg: correct ? `答对了！+${quiz.points} EXP` : '答错了，继续加油！' };
+  },
+
+  async exchangePoints(fromType, fromAmount) {
+    await sleep(500);
+    const rates = { watch: 0.2, exp: 0.5, gov: 1.2, data: 0.8, mp: 1.5 };
+    const rate = rates[fromType];
+    if (!rate) return { success: false };
+    const user = Store.get('user');
+    if (user[fromType] < fromAmount) return { success: false, msg: '积分不足' };
+    const hpGain = Math.floor(fromAmount * rate);
+    Store.update('user', u => ({ ...u, [fromType]: u[fromType] - fromAmount, hp: u.hp + hpGain }));
+    return { success: true, hp: hpGain, msg: `兑换成功！+${hpGain} HP` };
+  },
+
+  async createOrder(productId, qty) {
+    await sleep(700);
+    const products = Store.get('products');
+    const product = products.find(p => p.id === productId);
+    if (!product) return { success: false };
+    const user = Store.get('user');
+    const total = product.price * qty;
+    if (user.hp < total) return { success: false, msg: 'HP积分不足' };
+    Store.update('user', u => ({
+      ...u,
+      hp: u.hp - total,
+      orders: [{ id: 'o_' + Date.now(), productId, productName: product.name, qty, total, status: '已下单', time: formatTime() }, ...u.orders]
+    }));
+    return { success: true, msg: `订单创建成功，消耗 ${total} HP` };
+  },
+
+  async claimHonor(honorId) {
+    await sleep(600);
+    const honors = Store.get('honors');
+    const honor = honors.find(h => h.id === honorId);
+    if (!honor || honor.claimed) return { success: false, msg: '荣誉已兑换' };
+    const user = Store.get('user');
+    const costKey = honor.costType === 'willpower' ? 'willpower' : honor.costType;
+    if (user[costKey] < honor.cost) return { success: false, msg: `${honor.costType}不足` };
+    honor.claimed = true;
+    Store.set('honors', honors);
+    Store.update('user', u => ({
+      ...u,
+      [costKey]: u[costKey] - honor.cost,
+      honorsClaimed: [...u.honorsClaimed, honorId]
+    }));
+    return { success: true, msg: `🎖 获得「${honor.title}」` };
+  },
+
+  async merchantLogin(email, pwd) {
+    await sleep(800);
+    if (email === 'byd@example.com' && pwd === '123456') {
+      Store.update('merchant', m => ({ ...m, loggedIn: true }));
+      return { success: true };
+    }
+    return { success: false, msg: '邮箱或密码错误' };
+  },
+
+  async brainChat(mode, message) {
+    await sleep(800 + Math.random() * 600);
+    const responses = {
+      c: {
+        '积分': '你目前有 HP:12800、WATCH:5600、EXP:3200、GOV:800、DATA:1200、MP:2400。\n\n建议策略：\n1. 先把 WATCH积分 兑换为HP（汇率0.2），可得1120 HP\n2. 观看《智造者》全季，额外获得1200 WATCH\n3. 发表品牌分析，EXP积分快速增长\n\n预计本月HP可达15000+，够兑换华为以旧换新券 🎯',
+        '指数': '合力指数是比传统财报早3-6个月的先行指标，当前TOP3是：\n1. 比亚迪 92.4分 ↑+3.2\n2. 中芯国际 88.7分 ↑+1.8\n3. 宁德时代 86.3分 ↓-0.5\n\n推荐关注商汤科技，近期MP维度大幅提升，可能有重大事件',
+        'agent': '龙虾Agent是你的注意力资产化通道 🦞\n\n你当前是Lv.5先锋使者，可以创建个人Agent！\n\n推荐先创建「内容分析Agent」，自动分析行业研报并生成评论，每篇可获+200 EXP，一周可积累1400 EXP。\n\n要现在去创建吗？',
+        'pioneer': 'Pioneer OS是合力生态的子站，专注上市公司垂直产业叙事。\n\n核心能力：\n• 将企业故事转化为可量化的产业温度数据\n• 区块链存证，不可篡改\n• 与合力指数深度联动\n\n建议你先看比亚迪的产业叙事，体验一下如何用故事驱动估值'
+      },
+      b: {
+        '报告': '正在生成本月运营周报...\n\n📊 **5月运营摘要**\n• 月度收入：284万元（环比+18%）\n• 活跃用户：8924人（较上月+1200）\n• 品牌指数：92.4（涨3.2）\n• 注意力ROI：比传统广告高4.2倍\n\n🎯 **下月建议**\n1. 发布新一批产品券（预计带来200+订单）\n2. 参与《智造者》赞助可获品牌叙事内容\n3. 启动积分激励任务，目标召回流失用户300人',
+        '策略': '根据你的用户数据，推荐以下积分激励策略：\n\n🎯 策略一：复购激励\n条件：30天内未下单用户\n激励：首单额外-200HP\n预计ROI：3.2x\n\n🎯 策略二：内容互动\n条件：看完企业纪录片\n激励：+50 WATCH积分\n预计激活率：38%\n\n🎯 策略三：转介绍奖励\n条件：成功邀请1位好友注册\n激励：双方各得+100HP\n预计增长：15%新用户'
+      }
+    };
+
+    const msgs = Store.get('brainMessages');
+    const modeKey = mode || 'c';
+    const lower = message.toLowerCase();
+    let reply = '';
+    const respMap = responses[modeKey] || responses.c;
+
+    for (const [key, val] of Object.entries(respMap)) {
+      if (lower.includes(key)) { reply = val; break; }
+    }
+
+    if (!reply) {
+      reply = modeKey === 'c'
+        ? `关于「${message}」，我来帮你分析一下：\n\n在合力生态中，这个问题涉及多个维度。基于你目前 Lv.5 的等级和积分状况，建议你先了解相关的积分规则，通过观看内容和参与互动来累积更多价值。\n\n具体来说：WATCH积分通过观看综艺获取，EXP通过发表专业评论获取，MP积分是衡量你人性温度贡献的核心指标。\n\n有更具体的问题可以继续问我！`
+        : `关于「${message}」的商业策略建议：\n\n结合合力生态的注意力经济模型，建议从三个维度切入：\n\n1. **内容曝光**：赞助相关综艺内容，获取精准用户注意力\n2. **积分激励**：设计合理的HP积分任务，提升用户活跃度\n3. **指数管理**：维护好品牌在合力指数中的各维度评分\n\n需要我生成具体的执行方案吗？`;
+    }
+
+    return { success: true, reply };
+  }
+};
+
+// ========== 工具函数 ==========
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function formatTime() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function pad(n) { return n < 10 ? '0' + n : n; }
+
+function formatNumber(n) {
+  if (n >= 100000000) return (n / 100000000).toFixed(1) + '亿';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  if (n >= 1000) return n.toLocaleString();
+  return n.toString();
+}
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>合力生态 · HarmonyLink</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== 启动屏 ===== -->
+    <div id="page-splash" class="page active">
+      <div class="splash-bg"></div>
+      <div class="splash-content">
+        <div class="splash-logo-wrap">
+          <div class="splash-logo-icon">🔗</div>
+          <div class="splash-logo-text">合力生态</div>
+          <div class="splash-logo-sub">HARMONY LINKAGE</div>
+        </div>
+        <div class="splash-tagline">注意力经济 × AI Agent 新质生产力平台</div>
+        <div class="splash-tagline-en">Where Human Attention Meets AI Value</div>
+        <div class="splash-loading">
+          <div class="splash-dot"></div><div class="splash-dot"></div><div class="splash-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 首页 ===== -->
+    <div id="page-home" class="page">
+      <div class="status-bar"></div>
+      <div class="content-area scroll-area" id="home-scroll">
+        <!-- Hero Banner -->
+        <div class="home-hero">
+          <div class="hero-badge">🔥 AGI元年 · 注意力重新定价</div>
+          <h1 class="hero-title">让注意力被定价<br>让人性被传承</h1>
+          <p class="hero-sub">合力生态是AI时代「人性价值」的挖掘、定价与流通平台</p>
+          <div class="hero-stats">
+            <div class="hero-stat"><span class="stat-num">1.6亿</span><span class="stat-label">综艺赞助级别</span></div>
+            <div class="hero-stat"><span class="stat-num">5种</span><span class="stat-label">积分类型</span></div>
+            <div class="hero-stat"><span class="stat-num">$5000亿</span><span class="stat-label">AI Agent市场</span></div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="navigate('page-show-list')">🎬 探索《智造者》</button>
+            <button class="btn-ghost" onclick="navigate('page-pioneer-hub')">🚀 Pioneer OS</button>
+          </div>
+        </div>
+
+        <!-- 飞轮核心模块 -->
+        <div class="section-header">
+          <span class="section-title">核心飞轮</span>
+          <span class="section-badge">五节点闭环</span>
+        </div>
+        <div class="flywheel-mini" onclick="navigate('page-flywheel')">
+          <div class="fw-node fw-n1">C端参与</div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node fw-n2">积分铸造</div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node fw-n3">指数上行</div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node fw-n4">B端变现</div>
+          <div class="fw-arrow">→</div>
+          <div class="fw-node fw-n5">生态裂变</div>
+          <div class="fw-center">查看<br>飞轮详情</div>
+        </div>
+
+        <!-- 快捷入口宫格 -->
+        <div class="section-header">
+          <span class="section-title">平台入口</span>
+        </div>
+        <div class="quick-grid">
+          <div class="quick-item" onclick="navigate('page-show-list')">
+            <div class="qi-icon">🎬</div>
+            <div class="qi-label">《智造者》</div>
+            <div class="qi-sub">S级综艺</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-rank')">
+            <div class="qi-icon">📊</div>
+            <div class="qi-label">合力指数</div>
+            <div class="qi-sub">产业温度</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-agent')">
+            <div class="qi-icon">🦞</div>
+            <div class="qi-label">龙虾Agent</div>
+            <div class="qi-sub">注意力变现</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-pioneer-hub')">
+            <div class="qi-icon">🚀</div>
+            <div class="qi-label">Pioneer OS</div>
+            <div class="qi-sub">垂直叙事</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-mall')">
+            <div class="qi-icon">🛒</div>
+            <div class="qi-label">积分商城</div>
+            <div class="qi-sub">权益兑换</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-willpower')">
+            <div class="qi-icon">⚡</div>
+            <div class="qi-label">意志体系</div>
+            <div class="qi-sub">贡献记录</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-mp-explain')">
+            <div class="qi-icon">💎</div>
+            <div class="qi-label">MP积分</div>
+            <div class="qi-sub">意义资产</div>
+          </div>
+          <div class="quick-item" onclick="navigate('page-brain')">
+            <div class="qi-icon">🧠</div>
+            <div class="qi-label">合力智脑</div>
+            <div class="qi-sub">AI助手</div>
+          </div>
+        </div>
+
+        <!-- 智造者预告 -->
+        <div class="section-header">
+          <span class="section-title">S级综艺《智造者》</span>
+          <span class="section-more" onclick="navigate('page-show-list')">全部 ›</span>
+        </div>
+        <div class="show-promo-card" onclick="navigate('page-show-detail', {id:'zhizaozhe'})">
+          <div class="spc-cover">
+            <div class="spc-cover-bg"></div>
+            <div class="spc-badge">🔴 Q3开机</div>
+            <div class="spc-title">《智造者》第一季</div>
+            <div class="spc-sub">新质生产力上市公司参与赞助和录播</div>
+          </div>
+          <div class="spc-info">
+            <div class="spc-tags">
+              <span class="tag">灯塔工厂</span>
+              <span class="tag">流量艺人</span>
+              <span class="tag">新质生产力</span>
+            </div>
+            <div class="spc-desc">首个注意力采集器，S级综艺正式开启，引爆注意力经济飞轮</div>
+            <div class="spc-reward">📦 完整观看 +100 WATCH积分</div>
+          </div>
+        </div>
+
+        <!-- 合力指数 TOP5 -->
+        <div class="section-header">
+          <span class="section-title">合力指数 TOP 5</span>
+          <span class="section-more" onclick="navigate('page-rank')">查看全部 ›</span>
+        </div>
+        <div class="rank-mini-list" id="rank-mini-list"></div>
+
+        <!-- Pioneer OS 入口 -->
+        <div class="pioneer-entry-card" onclick="navigate('page-pioneer-hub')">
+          <div class="pec-left">
+            <div class="pec-badge">子站</div>
+            <div class="pec-title">Pioneer OS</div>
+            <div class="pec-sub">上市公司垂直产业叙事基础设施</div>
+            <div class="pec-desc">将企业故事转化为可量化的产业温度数据</div>
+          </div>
+          <div class="pec-right">🚀</div>
+        </div>
+
+        <!-- 积分体系说明 -->
+        <div class="section-header">
+          <span class="section-title">五维积分体系</span>
+          <span class="section-more" onclick="navigate('page-mp-explain')">了解更多 ›</span>
+        </div>
+        <div class="points-intro-cards">
+          <div class="pic-item pic-watch" onclick="navigate('page-points-detail')">
+            <div class="pic-icon">👁</div>
+            <div class="pic-name">WATCH</div>
+            <div class="pic-desc">观看积分</div>
+          </div>
+          <div class="pic-item pic-exp" onclick="navigate('page-points-detail')">
+            <div class="pic-icon">🧪</div>
+            <div class="pic-name">EXP</div>
+            <div class="pic-desc">体验积分</div>
+          </div>
+          <div class="pic-item pic-gov" onclick="navigate('page-points-detail')">
+            <div class="pic-icon">🗳</div>
+            <div class="pic-name">GOV</div>
+            <div class="pic-desc">治理积分</div>
+          </div>
+          <div class="pic-item pic-data" onclick="navigate('page-points-detail')">
+            <div class="pic-icon">📡</div>
+            <div class="pic-name">DATA</div>
+            <div class="pic-desc">数据积分</div>
+          </div>
+          <div class="pic-item pic-mp" onclick="navigate('page-mp-explain')">
+            <div class="pic-icon">💎</div>
+            <div class="pic-name">MP</div>
+            <div class="pic-desc">意义贡献</div>
+          </div>
+        </div>
+
+        <!-- 时代命题 -->
+        <div class="era-card">
+          <div class="era-quote">"未来99.9%认知劳动将由机器完成，但人与人之间的联结与情感体验，将成为价值的终极来源"</div>
+          <div class="era-source">— 红杉资本 AI峰会 2026</div>
+          <div class="era-action" onclick="navigate('page-about')">了解我们的使命 →</div>
+        </div>
+
+        <div style="height:80px"></div>
+      </div>
+
+      <!-- TabBar -->
+      <div class="tab-bar">
+        <div class="tab-item active" id="tab-home" onclick="navigate('page-home')">
+          <div class="tab-icon">🏠</div><div class="tab-label">首页</div>
+        </div>
+        <div class="tab-item" id="tab-show" onclick="navigate('page-show-list')">
+          <div class="tab-icon">🎬</div><div class="tab-label">综艺</div>
+        </div>
+        <div class="tab-item" id="tab-ai" onclick="navigate('page-brain')">
+          <div class="tab-icon">🤖</div><div class="tab-label">AI</div>
+        </div>
+        <div class="tab-item" id="tab-rank" onclick="navigate('page-rank')">
+          <div class="tab-icon">📊</div><div class="tab-label">指数</div>
+        </div>
+        <div class="tab-item" id="tab-mine" onclick="navigate('page-mine')">
+          <div class="tab-icon">👤</div><div class="tab-label">我的</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 飞轮详情页 ===== -->
+    <div id="page-flywheel" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 飞轮效应</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div class="flywheel-hero">
+          <div class="fw-hero-title">五节点飞轮闭环</div>
+          <div class="fw-hero-sub">飞轮一旦转起来，追赶成本极高</div>
+        </div>
+        <div id="flywheel-detail-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 综艺列表 ===== -->
+    <div id="page-show-list" class="page">
+      <div class="status-bar"></div>
+      <div class="nav-bar-tabs">
+        <div class="nbt-title">综艺内容</div>
+        <div class="nbt-tabs">
+          <span class="nbt-tab active" onclick="filterShows('all',this)">全部</span>
+          <span class="nbt-tab" onclick="filterShows('season1',this)">第一季</span>
+          <span class="nbt-tab" onclick="filterShows('doc',this)">纪录片</span>
+        </div>
+      </div>
+      <div class="content-area scroll-area" style="top:110px">
+        <div id="show-list-content"></div>
+        <div style="height:80px"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" id="tab-home2" onclick="navigate('page-home')">
+          <div class="tab-icon">🏠</div><div class="tab-label">首页</div>
+        </div>
+        <div class="tab-item active" id="tab-show2" onclick="navigate('page-show-list')">
+          <div class="tab-icon">🎬</div><div class="tab-label">综艺</div>
+        </div>
+        <div class="tab-item" id="tab-ai2" onclick="navigate('page-brain')">
+          <div class="tab-icon">🤖</div><div class="tab-label">AI</div>
+        </div>
+        <div class="tab-item" id="tab-rank2" onclick="navigate('page-rank')">
+          <div class="tab-icon">📊</div><div class="tab-label">指数</div>
+        </div>
+        <div class="tab-item" id="tab-mine2" onclick="navigate('page-mine')">
+          <div class="tab-icon">👤</div><div class="tab-label">我的</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 综艺详情 ===== -->
+    <div id="page-show-detail" class="page">
+      <div class="content-area scroll-area" style="top:0">
+        <div id="show-detail-content"></div>
+        <div style="height:100px"></div>
+      </div>
+      <div class="bottom-action-bar" id="show-bottom-bar"></div>
+    </div>
+
+    <!-- ===== 剧集列表 ===== -->
+    <div id="page-episode-list" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 剧集列表</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="episode-list-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 剧集播放 ===== -->
+    <div id="page-episode-play" class="page">
+      <div id="episode-play-content" style="height:100%;"></div>
+    </div>
+
+    <!-- ===== 竞猜页面 ===== -->
+    <div id="page-quiz" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 剧情竞猜</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="quiz-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== Pioneer Hub 子站 ===== -->
+    <div id="page-pioneer-hub" class="page">
+      <div class="pioneer-full-page">
+        <div class="ph-header">
+          <div class="ph-back" onclick="goBack()">← 返回合力生态</div>
+          <div class="ph-logo">🚀 Pioneer OS</div>
+          <div class="ph-mode-switcher">
+            <span class="ph-mode active" onclick="setPioneerMode('c', this)">个人版</span>
+            <span class="ph-mode" onclick="setPioneerMode('b', this)">企业版</span>
+            <span class="ph-mode" onclick="setPioneerMode('gov', this)">政务版</span>
+          </div>
+        </div>
+        <div class="content-area scroll-area" style="top:110px; bottom:0">
+          <div id="pioneer-main-content"></div>
+          <div style="height:40px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Pioneer OS 叙事详情 ===== -->
+    <div id="page-pioneer-narrative" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← Pioneer OS</div>
+        <div class="nav-title" id="pioneer-narrative-title">产业叙事</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="pioneer-narrative-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 算力纪录片 ===== -->
+    <div id="page-algo-doc" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 算力纪录片</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="algo-doc-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 合力指数 ===== -->
+    <div id="page-rank" class="page">
+      <div class="status-bar"></div>
+      <div class="nav-bar-tabs">
+        <div class="nbt-title">合力指数</div>
+        <div class="nbt-tabs">
+          <span class="nbt-tab active" onclick="filterRank('all',this)">全市场</span>
+          <span class="nbt-tab" onclick="filterRank('ai',this)">AI赛道</span>
+          <span class="nbt-tab" onclick="filterRank('new',this)">新质生产力</span>
+          <span class="nbt-tab" onclick="filterRank('energy',this)">新能源</span>
+        </div>
+      </div>
+      <div class="content-area scroll-area" style="top:110px">
+        <div id="rank-content"></div>
+        <div style="height:80px"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="navigate('page-home')"><div class="tab-icon">🏠</div><div class="tab-label">首页</div></div>
+        <div class="tab-item" onclick="navigate('page-show-list')"><div class="tab-icon">🎬</div><div class="tab-label">综艺</div></div>
+        <div class="tab-item" onclick="navigate('page-brain')"><div class="tab-icon">🤖</div><div class="tab-label">AI</div></div>
+        <div class="tab-item active"><div class="tab-icon">📊</div><div class="tab-label">指数</div></div>
+        <div class="tab-item" onclick="navigate('page-mine')"><div class="tab-icon">👤</div><div class="tab-label">我的</div></div>
+      </div>
+    </div>
+
+    <!-- ===== 品牌详情 ===== -->
+    <div id="page-brand" class="page">
+      <div class="content-area scroll-area" style="top:0">
+        <div id="brand-content"></div>
+        <div style="height:80px"></div>
+      </div>
+      <div class="bottom-action-bar" id="brand-bottom-bar"></div>
+    </div>
+
+    <!-- ===== 品牌故事 ===== -->
+    <div id="page-brand-story" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 品牌故事</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="brand-story-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== MP积分说明 ===== -->
+    <div id="page-mp-explain" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 意义贡献积分 MP</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="mp-explain-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 积分详情页 ===== -->
+    <div id="page-points-detail" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 积分明细</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="points-detail-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 积分兑换 ===== -->
+    <div id="page-points-exchange" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 积分兑换</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="points-exchange-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 商城 ===== -->
+    <div id="page-mall" class="page">
+      <div class="nav-bar-tabs">
+        <div class="nbt-title">积分商城</div>
+        <div class="nbt-tabs">
+          <span class="nbt-tab active" onclick="filterMall('all',this)">全部</span>
+          <span class="nbt-tab" onclick="filterMall('service',this)">服务券</span>
+          <span class="nbt-tab" onclick="filterMall('show',this)">演出票</span>
+          <span class="nbt-tab" onclick="filterMall('digital',this)">数字权益</span>
+        </div>
+      </div>
+      <div class="content-area scroll-area" style="top:110px">
+        <div id="mall-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 商品详情 ===== -->
+    <div id="page-product" class="page">
+      <div class="content-area scroll-area" style="top:0">
+        <div id="product-content"></div>
+        <div style="height:100px"></div>
+      </div>
+      <div class="bottom-action-bar" id="product-bottom-bar"></div>
+    </div>
+
+    <!-- ===== 订单确认 ===== -->
+    <div id="page-order-confirm" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 确认订单</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="order-confirm-content"></div>
+        <div style="height:100px"></div>
+      </div>
+      <div class="bottom-action-bar" id="order-confirm-bar"></div>
+    </div>
+
+    <!-- ===== 订单列表 ===== -->
+    <div id="page-order-list" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 我的订单</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="order-list-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 意志吞吐量 ===== -->
+    <div id="page-willpower" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 意志吞吐量</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="willpower-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 贡献记录 ===== -->
+    <div id="page-wp-records" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 贡献记录</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="wp-records-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 荣誉兑换 ===== -->
+    <div id="page-honor-list" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 荣誉兑换</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="honor-list-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 合力智脑 C端 ===== -->
+    <div id="page-brain" class="page">
+      <div class="status-bar"></div>
+      <div class="nav-bar-tabs">
+        <div class="nbt-title">合力智脑</div>
+        <div class="nbt-tabs">
+          <span class="nbt-tab active" onclick="switchBrain('c',this)">个人版</span>
+          <span class="nbt-tab" onclick="switchBrain('b',this)">商家版</span>
+        </div>
+      </div>
+      <div class="content-area" style="top:110px; bottom:0; display:flex; flex-direction:column;">
+        <div id="brain-chat-messages" class="chat-messages"></div>
+        <div class="chat-input-area">
+          <div class="chat-quick-btns" id="brain-quick-btns"></div>
+          <div class="chat-input-row">
+            <input type="text" id="brain-input" class="chat-input" placeholder="问问合力智脑...">
+            <button class="chat-send" onclick="sendBrainMessage()">发送</button>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="navigate('page-home')"><div class="tab-icon">🏠</div><div class="tab-label">首页</div></div>
+        <div class="tab-item" onclick="navigate('page-show-list')"><div class="tab-icon">🎬</div><div class="tab-label">综艺</div></div>
+        <div class="tab-item active"><div class="tab-icon">🤖</div><div class="tab-label">AI</div></div>
+        <div class="tab-item" onclick="navigate('page-rank')"><div class="tab-icon">📊</div><div class="tab-label">指数</div></div>
+        <div class="tab-item" onclick="navigate('page-mine')"><div class="tab-icon">👤</div><div class="tab-label">我的</div></div>
+      </div>
+    </div>
+
+    <!-- ===== 龙虾Agent ===== -->
+    <div id="page-agent" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 龙虾Agent</div>
+        <div class="nav-action" onclick="navigate('page-agent-market')">市场</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="agent-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== Agent市场 ===== -->
+    <div id="page-agent-market" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← Agent市场</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="agent-market-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== Agent创建 ===== -->
+    <div id="page-agent-create" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 创建Agent</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="agent-create-content"></div>
+        <div style="height:100px"></div>
+      </div>
+      <div class="bottom-action-bar" id="agent-create-bar"></div>
+    </div>
+
+    <!-- ===== AI写作助手 ===== -->
+    <div id="page-ai-writer" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← AI写作助手</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="ai-writer-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 我的 ===== -->
+    <div id="page-mine" class="page">
+      <div class="status-bar"></div>
+      <div class="content-area scroll-area">
+        <div id="mine-content"></div>
+        <div style="height:80px"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="navigate('page-home')"><div class="tab-icon">🏠</div><div class="tab-label">首页</div></div>
+        <div class="tab-item" onclick="navigate('page-show-list')"><div class="tab-icon">🎬</div><div class="tab-label">综艺</div></div>
+        <div class="tab-item" onclick="navigate('page-brain')"><div class="tab-icon">🤖</div><div class="tab-label">AI</div></div>
+        <div class="tab-item" onclick="navigate('page-rank')"><div class="tab-icon">📊</div><div class="tab-label">指数</div></div>
+        <div class="tab-item active"><div class="tab-icon">👤</div><div class="tab-label">我的</div></div>
+      </div>
+    </div>
+
+    <!-- ===== 关于我们 ===== -->
+    <div id="page-about" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 关于合力生态</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="about-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 商家登录 ===== -->
+    <div id="page-merchant-login" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goBack()">← 商家入驻</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="merchant-login-content"></div>
+      </div>
+    </div>
+
+    <!-- ===== 商家后台 ===== -->
+    <div id="page-merchant-dashboard" class="page">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="navigate('page-home')">← 返回平台</div>
+        <div class="nav-title">商家后台</div>
+      </div>
+      <div class="content-area scroll-area">
+        <div id="merchant-dashboard-content"></div>
+        <div style="height:40px"></div>
+      </div>
+    </div>
+
+    <!-- ===== Toast消息 ===== -->
+    <div id="toast" class="toast"></div>
+    <!-- ===== 遮罩层 ===== -->
+    <div id="overlay" class="overlay" onclick="closeOverlay()"></div>
+    <!-- ===== 弹窗 ===== -->
+    <div id="modal" class="modal">
+      <div class="modal-content" id="modal-content"></div>
+    </div>
+
+  </div><!-- end #app -->
+
+  <script src="data.js"></script>
+  <script src="app-part1.js"></script>
+  <script src="app-part2.js"></script>
+  <script src="app-part3.js"></script>
+  <script src="app-pioneer.js"></script>
+</body>
+</html>
+
+/* =============================================
+   合力生态 HarmonyLink · 全量升级样式表 v2.0
+   注意力经济 × AI Agent 新质生产力平台
+   ============================================= */
+
+/* ---- CSS 变量 ---- */
+:root {
+  --primary: #1E3A5F;
+  --primary-light: #2A5080;
+  --accent: #F18F01;
+  --accent-light: #FFBE45;
+  --bg: #F0F4F8;
+  --bg-dark: #0A1628;
+  --card-bg: #FFFFFF;
+  --text-main: #1A202C;
+  --text-sub: #718096;
+  --text-muted: #A0AEC0;
+  --success: #38A169;
+  --danger: #E53E3E;
+  --warning: #D69E2E;
+  --pioneer: #6C63FF;
+  --pioneer-light: #9F97FF;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --shadow: 0 4px 20px rgba(30,58,95,0.10);
+  --shadow-md: 0 8px 32px rgba(30,58,95,0.15);
+  --shadow-lg: 0 16px 48px rgba(30,58,95,0.20);
+
+  /* 积分色 */
+  --watch-color: #3182CE;
+  --exp-color: #805AD5;
+  --gov-color: #2F855A;
+  --data-color: #2B6CB0;
+  --mp-color: #D69E2E;
+  --hp-color: #DD6B20;
+}
+
+/* ---- 基础重置 ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #000; overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif; -webkit-font-smoothing: antialiased; }
+#app { width: 100%; max-width: 430px; height: 100vh; margin: 0 auto; position: relative; background: var(--bg); overflow: hidden; box-shadow: 0 0 60px rgba(0,0,0,0.5); }
+
+/* ---- 页面系统 ---- */
+.page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: none; flex-direction: column; overflow: hidden; }
+.page.active { display: flex; }
+.page.slide-in { animation: slideIn 0.28s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+.page.slide-out { animation: slideOut 0.25s cubic-bezier(0.55,0,1,0.45) forwards; }
+.page.fade-in { animation: fadeIn 0.22s ease forwards; }
+@keyframes slideIn { from { transform: translateX(100%); opacity:0.8; } to { transform: translateX(0); opacity:1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity:1; } to { transform: translateX(-30%); opacity:0; } }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.status-bar { height: 44px; background: var(--primary); flex-shrink: 0; }
+.content-area { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+.scroll-area { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 0 0 20px; }
+.scroll-area::-webkit-scrollbar { display: none; }
+
+/* ---- 导航栏 ---- */
+.nav-bar {
+  height: 54px; background: var(--primary); display: flex; align-items: center;
+  padding: 0 16px; flex-shrink: 0; position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+}
+.nav-back { color: #fff; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 6px; flex: 1; }
+.nav-title { color: #fff; font-size: 17px; font-weight: 600; position: absolute; left: 50%; transform: translateX(-50%); }
+.nav-action { color: var(--accent); font-size: 14px; cursor: pointer; }
+.nav-bar-tabs { height: 110px; background: var(--primary); flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding: 44px 16px 0; }
+.nbt-title { color: #fff; font-size: 20px; font-weight: 700; padding: 10px 0 8px; }
+.nbt-tabs { display: flex; gap: 8px; padding-bottom: 12px; overflow-x: auto; }
+.nbt-tabs::-webkit-scrollbar { display: none; }
+.nbt-tab { padding: 5px 14px; border-radius: 20px; font-size: 13px; color: rgba(255,255,255,0.65); cursor: pointer; white-space: nowrap; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; }
+.nbt-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+
+/* ---- TabBar ---- */
+.tab-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 68px;
+  background: #fff; display: flex; align-items: center;
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.08), 0 -4px 20px rgba(0,0,0,0.06);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 20;
+}
+.tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; padding: 6px 0; transition: all 0.2s; }
+.tab-icon { font-size: 22px; }
+.tab-label { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+.tab-item.active .tab-label { color: var(--primary); font-weight: 700; }
+.tab-item.active .tab-icon { transform: scale(1.1); }
+
+/* ---- 启动屏 ---- */
+.splash-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #0A1628 0%, #1E3A5F 50%, #0D2240 100%); }
+.splash-bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 40%, rgba(241,143,1,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 70%, rgba(108,99,255,0.1) 0%, transparent 50%); }
+.splash-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; padding: 40px; }
+.splash-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.splash-logo-icon { font-size: 64px; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.splash-logo-text { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: 2px; }
+.splash-logo-sub { font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 4px; }
+.splash-tagline { font-size: 15px; color: var(--accent); text-align: center; margin-top: 8px; }
+.splash-tagline-en { font-size: 11px; color: rgba(255,255,255,0.35); text-align: center; }
+.splash-loading { display: flex; gap: 8px; margin-top: 40px; }
+.splash-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); animation: dotPulse 1.2s ease-in-out infinite; }
+.splash-dot:nth-child(2) { animation-delay: 0.2s; }
+.splash-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse { 0%,100%{background:rgba(255,255,255,0.3);transform:scale(0.8)} 50%{background:rgba(255,255,255,0.9);transform:scale(1.2)} }
+
+/* ---- 首页 Hero ---- */
+.home-hero {
+  background: linear-gradient(160deg, #0A1628 0%, #1E3A5F 60%, #152D4D 100%);
+  padding: 56px 20px 32px;
+  position: relative; overflow: hidden;
+}
+.home-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 80% 20%, rgba(241,143,1,0.18) 0%, transparent 50%),
+              radial-gradient(ellipse at 20% 80%, rgba(108,99,255,0.12) 0%, transparent 45%);
+}
+.hero-badge {
+  position: relative; display: inline-block;
+  background: rgba(241,143,1,0.15); border: 1px solid rgba(241,143,1,0.35);
+  color: var(--accent-light); font-size: 12px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px;
+}
+.hero-title {
+  position: relative;
+  font-size: 28px; font-weight: 800; color: #fff; line-height: 1.3; margin-bottom: 12px;
+}
+.hero-sub { position: relative; font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 20px; }
+.hero-stats { position: relative; display: flex; gap: 16px; margin-bottom: 24px; }
+.hero-stat { text-align: center; flex: 1; }
+.stat-num { display: block; font-size: 18px; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.5); }
+.hero-actions { position: relative; display: flex; gap: 12px; }
+.btn-primary { flex: 1; background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; border: none; padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary:active { transform: scale(0.97); }
+.btn-ghost { flex: 1; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.2); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-ghost:active { background: rgba(255,255,255,0.15); }
+
+/* ---- Section标题 ---- */
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 10px; }
+.section-title { font-size: 17px; font-weight: 700; color: var(--text-main); }
+.section-badge { font-size: 11px; color: var(--accent); background: rgba(241,143,1,0.1); padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.section-more { font-size: 13px; color: var(--primary-light); cursor: pointer; }
+
+/* ---- 飞轮迷你图 ---- */
+.flywheel-mini {
+  margin: 0 16px; padding: 20px; border-radius: var(--radius);
+  background: linear-gradient(135deg, #0A1628, #1E3A5F);
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 8px; position: relative; cursor: pointer;
+  min-height: 90px;
+}
+.fw-node {
+  padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+}
+.fw-n1{border-color:rgba(241,143,1,0.6);background:rgba(241,143,1,0.12)}
+.fw-n2{border-color:rgba(56,161,105,0.6);background:rgba(56,161,105,0.12)}
+.fw-n3{border-color:rgba(108,99,255,0.6);background:rgba(108,99,255,0.12)}
+.fw-n4{border-color:rgba(49,130,206,0.6);background:rgba(49,130,206,0.12)}
+.fw-n5{border-color:rgba(221,107,32,0.6);background:rgba(221,107,32,0.12)}
+.fw-arrow { color: rgba(255,255,255,0.4); font-size: 14px; }
+.fw-center { position: absolute; bottom: 8px; right: 12px; font-size: 11px; color: rgba(255,255,255,0.4); text-align: right; }
+
+/* ---- 快捷宫格 ---- */
+.quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 16px; }
+.quick-item { background: #fff; border-radius: var(--radius-sm); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; box-shadow: var(--shadow); transition: all 0.2s; }
+.quick-item:active { transform: scale(0.95); box-shadow: none; }
+.qi-icon { font-size: 26px; }
+.qi-label { font-size: 12px; font-weight: 700; color: var(--text-main); text-align: center; }
+.qi-sub { font-size: 10px; color: var(--text-muted); }
+
+/* ---- 综艺宣传卡 ---- */
+.show-promo-card { margin: 0 16px; border-radius: var(--radius); overflow: hidden; background: #fff; box-shadow: var(--shadow); cursor: pointer; }
+.spc-cover { height: 180px; background: linear-gradient(135deg, #0D2240 0%, #1E3A5F 50%, #2A1A6B 100%); position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; }
+.spc-cover-bg { position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 10px); }
+.spc-badge { position: absolute; top: 12px; right: 12px; background: #E53E3E; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+.spc-title { font-size: 22px; font-weight: 800; color: #fff; position: relative; }
+.spc-sub { font-size: 12px; color: rgba(255,255,255,0.6); position: relative; margin-top: 4px; }
+.spc-info { padding: 14px 16px; }
+.spc-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.tag { font-size: 11px; padding: 3px 10px; border-radius: 10px; background: rgba(30,58,95,0.08); color: var(--primary); }
+.spc-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; margin-bottom: 10px; }
+.spc-reward { font-size: 12px; color: var(--success); background: rgba(56,161,105,0.08); padding: 6px 10px; border-radius: 8px; }
+
+/* ---- 合力指数迷你列表 ---- */
+.rank-mini-list { margin: 0 16px; background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.rank-mini-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); cursor: pointer; transition: background 0.2s; }
+.rank-mini-item:last-child { border-bottom: none; }
+.rank-mini-item:active { background: var(--bg); }
+.rmi-rank { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.rmi-rank.top1 { background: #F6AD55; color: #fff; }
+.rmi-rank.top2 { background: #CBD5E0; color: #fff; }
+.rmi-rank.top3 { background: #C4A35A; color: #fff; }
+.rmi-rank.normal { background: var(--bg); color: var(--text-sub); }
+.rmi-info { flex: 1; }
+.rmi-name { font-size: 14px; font-weight: 600; color: var(--text-main); }
+.rmi-sector { font-size: 11px; color: var(--text-muted); }
+.rmi-score { text-align: right; }
+.rmi-score-num { font-size: 16px; font-weight: 800; color: var(--accent); }
+.rmi-score-change { font-size: 11px; }
+.rmi-score-change.up { color: var(--danger); }
+.rmi-score-change.down { color: var(--success); }
+
+/* ---- Pioneer 入口卡 ---- */
+.pioneer-entry-card {
+  margin: 0 16px; padding: 20px;
+  background: linear-gradient(135deg, #1A0A3D 0%, #2D1B69 50%, #1E0F4A 100%);
+  border-radius: var(--radius); display: flex; align-items: center; gap: 16px;
+  cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(108,99,255,0.25);
+  border: 1px solid rgba(108,99,255,0.3);
+}
+.pioneer-entry-card::before { content:''; position:absolute; top:-20px; right:-20px; width:100px; height:100px; background:radial-gradient(circle, rgba(108,99,255,0.3) 0%, transparent 70%); }
+.pec-left { flex: 1; }
+.pec-badge { display: inline-block; font-size: 10px; color: var(--pioneer-light); background: rgba(108,99,255,0.2); border: 1px solid rgba(108,99,255,0.35); padding: 2px 8px; border-radius: 10px; margin-bottom: 6px; }
+.pec-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.pec-sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 8px; }
+.pec-desc { font-size: 12px; color: rgba(255,255,255,0.4); }
+.pec-right { font-size: 40px; }
+
+/* ---- 积分卡片 ---- */
+.points-intro-cards { display: flex; gap: 8px; padding: 0 16px; overflow-x: auto; }
+.points-intro-cards::-webkit-scrollbar { display: none; }
+.pic-item { flex-shrink: 0; width: 80px; background: #fff; border-radius: var(--radius-sm); padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; box-shadow: var(--shadow); }
+.pic-icon { font-size: 24px; }
+.pic-name { font-size: 13px; font-weight: 800; }
+.pic-desc { font-size: 10px; color: var(--text-muted); }
+.pic-watch .pic-name { color: var(--watch-color); }
+.pic-exp .pic-name { color: var(--exp-color); }
+.pic-gov .pic-name { color: var(--gov-color); }
+.pic-data .pic-name { color: var(--data-color); }
+.pic-mp .pic-name { color: var(--mp-color); }
+
+/* ---- 时代命题卡 ---- */
+.era-card { margin: 16px; padding: 20px; background: linear-gradient(135deg, #0A1628, #1E3A5F); border-radius: var(--radius); }
+.era-quote { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.7; font-style: italic; margin-bottom: 10px; }
+.era-source { font-size: 11px; color: var(--accent); margin-bottom: 14px; }
+.era-action { font-size: 13px; color: rgba(255,255,255,0.5); cursor: pointer; }
+.era-action:hover { color: rgba(255,255,255,0.8); }
+
+/* ---- 卡片通用 ---- */
+.card { background: #fff; border-radius: var(--radius); padding: 16px; margin: 0 16px 12px; box-shadow: var(--shadow); }
+.card-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; }
+.card-sub { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+
+/* ---- 综艺卡片 ---- */
+.show-card { margin: 0 16px 12px; background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; display: flex; gap: 0; transition: box-shadow 0.2s; }
+.show-card:active { box-shadow: none; }
+.sc-cover { width: 120px; min-height: 90px; background: linear-gradient(135deg, #0D2240, #1E3A5F); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 40px; position: relative; }
+.sc-badge { position: absolute; top: 6px; left: 6px; font-size: 10px; background: #E53E3E; color: #fff; padding: 2px 6px; border-radius: 6px; font-weight: 700; }
+.sc-info { padding: 12px; flex: 1; }
+.sc-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.sc-ep { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.sc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.sc-reward { font-size: 11px; color: var(--success); }
+
+/* ---- 综艺详情 ---- */
+.show-hero { height: 240px; background: linear-gradient(135deg, #0A1628, #2A1A6B); position: relative; display: flex; align-items: flex-end; }
+.show-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%); }
+.show-hero-content { position: relative; z-index: 1; padding: 20px; width: 100%; }
+.show-hero-back { position: absolute; top: 16px; left: 16px; z-index: 2; width: 36px; height: 36px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; font-size: 16px; }
+.show-hero-title { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.show-hero-sub { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+/* ---- 剧集网格 ---- */
+.ep-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 16px; }
+.ep-item { aspect-ratio: 1; background: #fff; border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; box-shadow: var(--shadow); border: 2px solid transparent; transition: all 0.2s; }
+.ep-item.watched { border-color: var(--success); background: rgba(56,161,105,0.06); }
+.ep-item.current { border-color: var(--accent); }
+.ep-num { font-size: 15px; font-weight: 800; color: var(--primary); }
+.ep-label { font-size: 9px; color: var(--text-muted); }
+
+/* ---- 播放页 ---- */
+.player-page { height: 100%; background: #000; display: flex; flex-direction: column; }
+.player-video { background: #111; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; }
+.player-mock { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.player-play-btn { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
+.player-back { position: absolute; top: 12px; left: 12px; color: #fff; font-size: 20px; cursor: pointer; background: rgba(0,0,0,0.3); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.player-info { flex: 1; background: var(--bg); overflow-y: auto; }
+
+/* ---- 指数页 ---- */
+.index-overview { background: linear-gradient(135deg, #0A1628, #1E3A5F); margin: 0 16px 16px; border-radius: var(--radius); padding: 20px; }
+.io-title { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 6px; }
+.io-score { font-size: 42px; font-weight: 900; color: var(--accent); line-height: 1; margin-bottom: 8px; }
+.io-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+.io-bars { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.io-bar-item { display: flex; align-items: center; gap: 8px; }
+.io-bar-label { font-size: 11px; color: rgba(255,255,255,0.6); width: 70px; flex-shrink: 0; }
+.io-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; }
+.io-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+.io-bar-val { font-size: 11px; color: rgba(255,255,255,0.6); width: 30px; text-align: right; }
+
+.company-card { margin: 0 16px 10px; background: #fff; border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; }
+.company-card:active { transform: scale(0.98); }
+.cc-rank { font-size: 20px; font-weight: 900; color: var(--primary-light); width: 32px; }
+.cc-info { flex: 1; }
+.cc-name { font-size: 15px; font-weight: 700; color: var(--text-main); }
+.cc-sector { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.cc-bar { height: 4px; background: var(--bg); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.cc-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); border-radius: 2px; }
+.cc-score { text-align: right; }
+.cc-score-num { font-size: 20px; font-weight: 800; color: var(--accent); }
+.cc-score-label { font-size: 10px; color: var(--text-muted); }
+
+/* ---- Pioneer Hub ---- */
+.pioneer-full-page { height: 100%; display: flex; flex-direction: column; background: #0A1628; }
+.ph-header { height: 110px; padding: 44px 16px 0; background: linear-gradient(135deg, #0A1628, #1A0A3D); display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 12px; flex-shrink: 0; }
+.ph-back { color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer; margin-bottom: 4px; }
+.ph-logo { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+.ph-mode-switcher { display: flex; gap: 8px; }
+.ph-mode { padding: 5px 16px; border-radius: 20px; font-size: 13px; color: rgba(255,255,255,0.55); cursor: pointer; border: 1px solid rgba(108,99,255,0.25); transition: all 0.2s; }
+.ph-mode.active { background: var(--pioneer); color: #fff; border-color: var(--pioneer); }
+
+/* Pioneer 内容区 */
+.pioneer-hero { padding: 20px 16px; }
+.ph-hero-title { font-size: 26px; font-weight: 800; color: #fff; line-height: 1.3; margin-bottom: 8px; }
+.ph-hero-sub { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+.pioneer-module { margin: 0 16px 12px; }
+.pm-title { font-size: 13px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; padding: 0 2px; }
+.pioneer-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.pioneer-card:active { background: rgba(255,255,255,0.1); }
+.pc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.pc-icon { font-size: 24px; }
+.pc-title { font-size: 15px; font-weight: 700; color: #fff; }
+.pc-badge { margin-left: auto; font-size: 10px; color: var(--pioneer-light); background: rgba(108,99,255,0.2); padding: 2px 8px; border-radius: 10px; }
+.pc-desc { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 10px; }
+.pc-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+.pc-stat { text-align: center; }
+.pc-stat-num { font-size: 18px; font-weight: 800; color: var(--pioneer-light); }
+.pc-stat-label { font-size: 10px; color: rgba(255,255,255,0.35); }
+
+/* ---- 飞轮详情 ---- */
+.fw-detail-node { margin: 0 16px 12px; }
+.fwdn-head { display: flex; align-items: center; gap: 10px; padding: 16px; background: rgba(255,255,255,0.04); border-radius: var(--radius) var(--radius) 0 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.fwdn-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fwdn-title { font-size: 15px; font-weight: 700; color: #fff; }
+.fwdn-body { padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 0 0 var(--radius) var(--radius); }
+.fwdn-desc { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.7; margin-bottom: 12px; }
+.fwdn-items { display: flex; flex-direction: column; gap: 6px; }
+.fwdn-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.45); }
+.fwdn-item::before { content: '›'; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+.fw-arrow-large { text-align: center; color: rgba(255,255,255,0.2); font-size: 24px; margin: 4px 0; }
+
+/* ---- MP积分详情 ---- */
+.mp-hero { background: linear-gradient(135deg, #1A1000, #4A3000); padding: 32px 20px; text-align: center; }
+.mp-icon { font-size: 56px; margin-bottom: 12px; }
+.mp-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.mp-sub { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+.mp-dimension { margin: 0 16px 10px; background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.mpd-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.mpd-icon { font-size: 24px; }
+.mpd-title { font-size: 15px; font-weight: 700; color: var(--text-main); }
+.mpd-score { margin-left: auto; font-size: 18px; font-weight: 800; color: var(--mp-color); }
+.mpd-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+
+/* ---- 我的页面 ---- */
+.mine-header { background: linear-gradient(135deg, #0A1628, #1E3A5F); padding: 56px 20px 24px; }
+.mine-user-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.mine-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-light)); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.3); }
+.mine-user-info { flex: 1; }
+.mine-name { font-size: 18px; font-weight: 800; color: #fff; }
+.mine-level { font-size: 12px; color: var(--accent); margin-top: 2px; }
+.mine-checkin-btn { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.mine-points-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.mpg-item { background: rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
+.mpg-num { font-size: 18px; font-weight: 800; color: #fff; }
+.mpg-label { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+.mine-menu { background: #fff; margin: 0 16px; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.mine-menu-item { display: flex; align-items: center; padding: 16px; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); cursor: pointer; transition: background 0.2s; }
+.mine-menu-item:last-child { border-bottom: none; }
+.mine-menu-item:active { background: var(--bg); }
+.mmi-icon { font-size: 22px; width: 28px; text-align: center; }
+.mmi-label { flex: 1; font-size: 15px; color: var(--text-main); }
+.mmi-arrow { color: var(--text-muted); font-size: 14px; }
+
+/* ---- 合力智脑 Chat ---- */
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--bg); }
+.chat-messages::-webkit-scrollbar { display: none; }
+.chat-msg { max-width: 85%; }
+.chat-msg.assistant { align-self: flex-start; }
+.chat-msg.user { align-self: flex-end; }
+.chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.6; }
+.chat-msg.assistant .chat-bubble { background: #fff; color: var(--text-main); border-bottom-left-radius: 4px; box-shadow: var(--shadow); }
+.chat-msg.user .chat-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; padding: 0 4px; }
+.chat-quick-btns { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px; background: #fff; border-top: 1px solid rgba(0,0,0,0.06); }
+.chat-quick-btns::-webkit-scrollbar { display: none; }
+.chat-qbtn { padding: 6px 12px; border-radius: 16px; font-size: 12px; color: var(--primary); background: rgba(30,58,95,0.08); border: none; cursor: pointer; white-space: nowrap; }
+.chat-input-area { background: #fff; border-top: 1px solid rgba(0,0,0,0.06); flex-shrink: 0; }
+.chat-input-row { display: flex; gap: 10px; padding: 10px 16px 12px; }
+.chat-input { flex: 1; border: 1px solid rgba(0,0,0,0.12); border-radius: 20px; padding: 8px 16px; font-size: 14px; outline: none; background: var(--bg); }
+.chat-send { background: var(--primary); color: #fff; border: none; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.brain-typing { display: flex; gap: 4px; align-items: center; padding: 8px 14px; background: #fff; border-radius: 12px; box-shadow: var(--shadow); width: fit-content; }
+.brain-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: typing 1.2s infinite; }
+.brain-typing span:nth-child(2) { animation-delay: 0.2s; }
+.brain-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* ---- 龙虾Agent ---- */
+.agent-hero { background: linear-gradient(135deg, #1A0A0A, #4A1010); padding: 32px 20px 24px; }
+.agent-hero-icon { font-size: 56px; text-align: center; margin-bottom: 12px; }
+.agent-hero-title { font-size: 22px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 6px; }
+.agent-hero-sub { font-size: 13px; color: rgba(255,255,255,0.55); text-align: center; line-height: 1.6; }
+.agent-stat-row { display: flex; gap: 12px; padding: 16px; background: rgba(255,255,255,0.04); }
+.asr-item { flex: 1; text-align: center; }
+.asr-num { font-size: 20px; font-weight: 800; color: var(--accent); }
+.asr-label { font-size: 11px; color: rgba(255,255,255,0.35); }
+.agent-type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
+.agent-type-card { background: #fff; border-radius: var(--radius); padding: 16px; cursor: pointer; box-shadow: var(--shadow); border: 2px solid transparent; transition: all 0.2s; }
+.agent-type-card:active { transform: scale(0.97); }
+.agent-type-card.active { border-color: var(--accent); background: rgba(241,143,1,0.04); }
+.atc-icon { font-size: 28px; margin-bottom: 8px; }
+.atc-title { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.atc-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; margin-bottom: 8px; }
+.atc-reward { font-size: 11px; color: var(--success); font-weight: 600; }
+
+/* ---- 商城 ---- */
+.mall-banner { margin: 0 16px 16px; background: linear-gradient(135deg, #0A1628, #1E3A5F); border-radius: var(--radius); padding: 20px; display: flex; align-items: center; gap: 16px; }
+.mb-info { flex: 1; }
+.mb-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.mb-sub { font-size: 12px; color: rgba(255,255,255,0.55); }
+.mb-points { font-size: 24px; font-weight: 900; color: var(--accent); }
+.product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
+.product-card { background: #fff; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; }
+.product-card:active { transform: scale(0.97); }
+.pc-img { height: 120px; background: linear-gradient(135deg, #F0F4F8, #E2E8F0); display: flex; align-items: center; justify-content: center; font-size: 48px; position: relative; }
+.pc-tag { position: absolute; top: 8px; left: 8px; font-size: 10px; background: var(--danger); color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.pc-body { padding: 10px; }
+.pc-name { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; line-height: 1.4; }
+.pc-company { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.pc-price { font-size: 16px; font-weight: 800; color: var(--accent); }
+.pc-price-label { font-size: 11px; color: var(--text-muted); }
+
+/* ---- 意志吞吐量 ---- */
+.wp-hero { background: linear-gradient(135deg, #0A1628, #1E3A5F); padding: 32px 20px 24px; text-align: center; }
+.wp-gauge { width: 140px; height: 140px; margin: 0 auto 16px; position: relative; }
+.wp-gauge-circle { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(var(--accent) 0% 72%, rgba(255,255,255,0.1) 72% 100%); display: flex; align-items: center; justify-content: center; }
+.wp-gauge-inner { width: 100px; height: 100px; border-radius: 50%; background: #0A1628; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.wp-gauge-num { font-size: 26px; font-weight: 900; color: var(--accent); }
+.wp-gauge-label { font-size: 10px; color: rgba(255,255,255,0.4); }
+.wp-level { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.wp-rank { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+/* ---- 关于页面 ---- */
+.about-hero { background: linear-gradient(135deg, #0A1628, #1E3A5F); padding: 48px 20px 32px; text-align: center; }
+.about-logo { font-size: 56px; margin-bottom: 16px; }
+.about-title { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.about-sub { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.7; }
+.timeline-item { margin: 0 16px 0; display: flex; gap: 16px; }
+.tl-line { display: flex; flex-direction: column; align-items: center; }
+.tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 4px; }
+.tl-vert { width: 2px; flex: 1; background: rgba(30,58,95,0.15); margin: 4px 0; min-height: 40px; }
+.tl-content { flex: 1; padding-bottom: 20px; }
+.tl-year { font-size: 12px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+.tl-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.tl-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+
+/* ---- Toast ---- */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 24px; font-size: 14px; white-space: nowrap; pointer-events: none; opacity: 0; transition: all 0.3s; z-index: 9999; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100; }
+.overlay.show { opacity: 1; pointer-events: auto; }
+.modal { position: fixed; left: 0; right: 0; bottom: -100%; background: #fff; border-radius: var(--radius-lg) var(--radius-lg) 0 0; z-index: 101; transition: bottom 0.35s cubic-bezier(0.25,0.46,0.45,0.94); max-height: 85vh; overflow-y: auto; padding: 20px; }
+.modal.show { bottom: 0; }
+.modal-handle { width: 40px; height: 4px; background: rgba(0,0,0,0.12); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 16px; }
+
+/* ---- 底部操作栏 ---- */
+.bottom-action-bar { position: absolute; bottom: 0; left: 0; right: 0; background: #fff; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); display: flex; gap: 12px; z-index: 10; }
+.bab-btn { flex: 1; padding: 13px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+.bab-btn.primary { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; }
+.bab-btn.accent { background: linear-gradient(135deg, var(--accent), var(--accent-light)); color: #fff; }
+.bab-btn.ghost { background: var(--bg); color: var(--primary); border: 1px solid rgba(30,58,95,0.2); }
+
+/* ---- 数据看板 ---- */
+.dashboard-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
+.ds-card { background: #fff; border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.ds-icon { font-size: 24px; margin-bottom: 8px; }
+.ds-num { font-size: 22px; font-weight: 800; color: var(--primary); }
+.ds-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.ds-change { font-size: 11px; margin-top: 4px; }
+.ds-change.up { color: var(--danger); }
+.ds-change.down { color: var(--success); }
+.chart-bar-h { height: 8px; background: var(--bg); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+.chart-bar-h-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); border-radius: 4px; }
+
+/* ---- 通用工具 ---- */
+.divider { height: 8px; background: var(--bg); margin: 0; }
+.list-item { display: flex; align-items: center; padding: 14px 16px; background: #fff; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); cursor: pointer; }
+.list-item:active { background: var(--bg); }
+.li-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.li-info { flex: 1; }
+.li-title { font-size: 14px; color: var(--text-main); font-weight: 600; }
+.li-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.li-right { font-size: 13px; color: var(--text-muted); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.badge-success { background: rgba(56,161,105,0.1); color: var(--success); }
+.badge-warning { background: rgba(214,158,46,0.1); color: var(--warning); }
+.badge-danger { background: rgba(229,62,62,0.1); color: var(--danger); }
+.badge-primary { background: rgba(30,58,95,0.1); color: var(--primary); }
+.badge-accent { background: rgba(241,143,1,0.1); color: var(--accent); }
+.empty-state { text-align: center; padding: 48px 20px; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+.empty-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.progress-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+/* 积分详情 */
+.points-header { background: linear-gradient(135deg, #0A1628, #1E3A5F); padding: 32px 20px 24px; }
+.ph-total { text-align: center; margin-bottom: 20px; }
+.ph-total-num { font-size: 48px; font-weight: 900; color: var(--accent); line-height: 1; }
+.ph-total-label { font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+.ph-types { display: flex; gap: 8px; overflow-x: auto; }
+.ph-types::-webkit-scrollbar { display: none; }
+.ph-type-pill { padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); transition: all 0.2s; flex-shrink: 0; }
+.ph-type-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(241,143,1,0.12); }
+.points-record { display: flex; align-items: center; padding: 14px 16px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.04); gap: 12px; }
+.pr-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.pr-info { flex: 1; }
+.pr-action { font-size: 14px; color: var(--text-main); font-weight: 600; }
+.pr-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.pr-amount { font-size: 16px; font-weight: 800; }
+.pr-amount.positive { color: var(--success); }
+.pr-amount.negative { color: var(--danger); }
+
+/* 荣誉页 */
+.honor-card { background: #fff; border-radius: var(--radius); padding: 16px; margin: 0 16px 12px; box-shadow: var(--shadow); display: flex; gap: 14px; align-items: center; cursor: pointer; transition: all 0.2s; }
+.honor-card:active { transform: scale(0.98); }
+.honor-card.claimed { opacity: 0.6; }
+.hc-icon { font-size: 36px; width: 56px; height: 56px; background: linear-gradient(135deg, rgba(241,143,1,0.1), rgba(241,143,1,0.2)); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hc-info { flex: 1; }
+.hc-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.hc-req { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.hc-cost { font-size: 13px; color: var(--accent); font-weight: 700; }
+.hc-btn { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
+.hc-btn.available { background: var(--accent); color: #fff; }
+.hc-btn.claimed { background: var(--bg); color: var(--text-muted); }
+
+/* 商家后台 */
+.merchant-header { background: linear-gradient(135deg, #0A1628, #1E3A5F); padding: 28px 20px 20px; }
+.mh-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.mh-sub { font-size: 13px; color: rgba(255,255,255,0.55); }
+
+/* 关于：三步战略 */
+.strategy-card { margin: 0 16px 12px; background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.sc-year { font-size: 13px; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+.sc-title { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+.sc-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+.sc-stage { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+.sc-stage.validate { background: rgba(56,161,105,0.1); color: var(--success); }
+.sc-stage.growth { background: rgba(241,143,1,0.1); color: var(--accent); }
+.sc-stage.ecosystem { background: rgba(108,99,255,0.1); color: var(--pioneer); }
+
+/* 登录页 */
+.login-page { padding: 60px 24px 40px; }
+.login-logo { text-align: center; margin-bottom: 40px; }
+.login-logo-icon { font-size: 56px; margin-bottom: 12px; }
+.login-logo-title { font-size: 24px; font-weight: 800; color: var(--primary); }
+.login-logo-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.login-form { display: flex; flex-direction: column; gap: 14px; }
+.form-input { border: 1.5px solid rgba(0,0,0,0.12); border-radius: var(--radius-sm); padding: 13px 16px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--primary); }
+.login-btn { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 16px; font-weight: 700; cursor: pointer; }
+.login-alt { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-muted); }
+.login-alt span { color: var(--primary); cursor: pointer; font-weight: 600; }
+
+/* 搜索框 */
+.search-bar { margin: 12px 16px; display: flex; gap: 8px; }
+.search-input { flex: 1; border: 1.5px solid rgba(0,0,0,0.1); border-radius: 24px; padding: 10px 16px; font-size: 14px; outline: none; background: #fff; }
+.search-btn { background: var(--primary); color: #fff; border: none; padding: 10px 16px; border-radius: 24px; font-size: 14px; cursor: pointer; }
+
+/* 品牌详情 */
+.brand-hero { height: 200px; position: relative; display: flex; align-items: flex-end; background: linear-gradient(135deg, #0A1628, #1E3A5F); }
+.brand-hero-back { position: absolute; top: 16px; left: 16px; z-index: 2; width: 36px; height: 36px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
+.brand-hero-content { position: relative; z-index: 1; padding: 20px; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); }
+.brand-hero-name { font-size: 22px; font-weight: 800; color: #fff; }
+.brand-hero-code { font-size: 14px; color: rgba(255,255,255,0.55); }
+.brand-index-panel { margin: 0 16px; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.bip-head { background: linear-gradient(135deg, var(--accent), var(--accent-light)); padding: 16px; display: flex; align-items: center; gap: 12px; }
+.bip-score { font-size: 42px; font-weight: 900; color: #fff; }
+.bip-info { }
+.bip-label { font-size: 12px; color: rgba(255,255,255,0.75); }
+.bip-change { font-size: 14px; color: #fff; font-weight: 700; margin-top: 2px; }
+.bip-dims { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.bip-dim { }
+.bip-dim-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.bip-dim-label { font-size: 12px; color: var(--text-sub); }
+.bip-dim-val { font-size: 12px; font-weight: 700; color: var(--text-main); }
+.bip-dim-bar { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.bip-dim-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width 1s ease; }
+
+/* 积分兑换 */
+.exchange-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px; }
+.exchange-card { background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+.exchange-card:active { transform: scale(0.97); }
+.exc-icon { font-size: 28px; margin-bottom: 8px; }
+.exc-name { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.exc-rate { font-size: 12px; color: var(--text-sub); margin-bottom: 8px; }
+.exc-btn { width: 100%; padding: 8px; background: var(--bg); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--primary); cursor: pointer; }
+
+/* AI写作 */
+.writer-templates { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.wt-card { background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; display: flex; gap: 12px; align-items: flex-start; }
+.wt-card:active { transform: scale(0.98); }
+.wt-icon { font-size: 28px; flex-shrink: 0; }
+.wt-info { flex: 1; }
+.wt-title { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.wt-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; margin-bottom: 6px; }
+.wt-reward { font-size: 11px; color: var(--success); }
+
+/* 订单确认 */
+.order-confirm-body { padding: 16px; }
+.oc-product-row { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.oc-product-img { font-size: 40px; }
+.oc-product-name { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.oc-product-company { font-size: 12px; color: var(--text-muted); }
+.oc-detail { background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.oc-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.oc-row:last-child { border-bottom: none; }
+.oc-label { font-size: 14px; color: var(--text-sub); }
+.oc-value { font-size: 14px; color: var(--text-main); font-weight: 600; }
+.oc-value.accent { color: var(--accent); font-size: 18px; }
